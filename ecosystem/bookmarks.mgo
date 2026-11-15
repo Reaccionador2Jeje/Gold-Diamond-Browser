@@ -7,15 +7,13 @@ when profile_id == "" {
     profile_id = "default"
 }
 vibe storage_path = "data/bookmarks-" + profile_id + ".json"
-vibe legacy_path = "data/bookmarks.json"
+when profile_id == "default" {
+    storage_path = "data/bookmarks.json"
+}
 vibe bookmarks = []
 
 when file_exists(storage_path) {
     bookmarks = json_parse(read_file(storage_path))
-} else {
-    when profile_id == "default" && file_exists(legacy_path) {
-        bookmarks = json_parse(read_file(legacy_path))
-    }
 }
 
 when request.action == "add" {
