@@ -2,14 +2,7 @@
 # History records are stored and managed by Memingo.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe profile_id = request.profile_id
-when profile_id == "" {
-    profile_id = "default"
-}
-vibe storage_path = "data/history-" + profile_id + ".json"
-when profile_id == "default" {
-    storage_path = "data/history.json"
-}
+vibe storage_path = env("GDB_STORAGE_PATH", "data/history.json")
 vibe entries = []
 
 when file_exists(storage_path) {
@@ -32,4 +25,4 @@ when request.action == "clear" {
     write_file(storage_path, json_stringify(entries))
 }
 
-spill json_stringify({history: entries, profile_id: profile_id})
+spill json_stringify({history: entries})
