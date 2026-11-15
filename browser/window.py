@@ -5,14 +5,17 @@ from html import escape
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
-    QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QApplication, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
     QTabWidget, QToolBar, QVBoxLayout, QWidget,
 )
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PySide6.QtWebEngineWidgets import QWebEngineView
+
+from .ui.dashboard import build_dashboard
+from .ui.theme import build_stylesheet
 
 from .memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, list_history, load_settings,
@@ -33,6 +36,7 @@ class GoldDiamondWindow(QMainWindow):
         self.theme_name = self.settings.get("theme", "graphite")
         self._download_connections = set()
         self.download_items = []
+        self.closed_tabs: list[dict[str, str]] = []
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
         self.setWindowIconText("G◆D")
         window = config.get("window", {})
@@ -47,6 +51,8 @@ class GoldDiamondWindow(QMainWindow):
         self.tabs.setElideMode(Qt.TextElideMode.ElideRight)
         self.tabs.setUsesScrollButtons(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
+        self.tabs.tabBar().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tabs.tabBar().customContextMenuRequested.connect(self.show_tab_context_menu)
         self.tabs.currentChanged.connect(self.sync_address)
         self.setCentralWidget(self.tabs)
 
@@ -59,54 +65,8 @@ class GoldDiamondWindow(QMainWindow):
         self.restore_saved_session()
 
     def _stylesheet(self) -> str:
-        palettes = {
-            "graphite": {
-                "bg": "#0b0f17", "bar": "#111827", "field": "#0d1420",
-                "panel": "#172235", "tab": "#202b3b", "hover": "#25364a",
-                "text": "#edf2f8", "muted": "#91a0b4", "border": "#34445a",
-                "gold": "#e5b85c", "blue": "#75d8e8",
-            },
-            "midnight": {
-                "bg": "#080d20", "bar": "#111a36", "field": "#0c1530",
-                "panel": "#17264a", "tab": "#202f57", "hover": "#2b4172",
-                "text": "#eef2ff", "muted": "#a1b1d8", "border": "#354b7c",
-                "gold": "#9fbcff", "blue": "#72e4ff",
-            },
-            "pearl": {
-                "bg": "#edf1f7", "bar": "#dce4ef", "field": "#ffffff",
-                "panel": "#e4eaf3", "tab": "#f8faff", "hover": "#d5e0ef",
-                "text": "#182438", "muted": "#53647b", "border": "#b8c6d8",
-                "gold": "#a36c12", "blue": "#087f9b",
-            },
-        }
-        p = palettes.get(self.theme_name, palettes["graphite"])
-        return f"""
-        QWidget {{ color: {p["text"]}; font-family: 'Segoe UI', 'Inter', sans-serif; font-size: 10pt; }}
-        QMainWindow, QTabWidget::pane {{ background: {p["bg"]}; border: 0; }}
-        QToolBar {{ background: {p["bar"]}; border: 0; spacing: 6px; padding: 8px 12px; }}
-        QToolButton {{ color: {p["text"]}; background: {p["panel"]}; border: 1px solid {p["border"]};
-            border-radius: 10px; padding: 8px 11px; }}
-        QToolButton:hover {{ background: {p["hover"]}; border-color: {p["gold"]}; }}
-        QLineEdit {{ background: {p["field"]}; color: {p["text"]}; border: 1px solid {p["border"]};
-            border-radius: 13px; padding: 11px 15px; selection-background-color: {p["blue"]}; }}
-        QLineEdit:focus {{ border: 1px solid {p["gold"]}; }}
-        QTabBar::tab {{ background: {p["bar"]}; color: {p["muted"]}; padding: 11px 18px;
-            margin-right: 3px; border-top-left-radius: 10px; border-top-right-radius: 10px; }}
-        QTabBar::tab:selected {{ color: {p["gold"]}; background: {p["tab"]}; border-bottom: 2px solid {p["gold"]}; }}
-        QTabBar::tab:hover {{ background: {p["hover"]}; }}
-        QStatusBar {{ background: {p["bar"]}; color: {p["muted"]}; border-top: 1px solid {p["border"]}; }}
-        QDockWidget {{ color: {p["gold"]}; background: {p["panel"]}; border: 1px solid {p["border"]}; }}
-        QDockWidget::title {{ background: {p["bar"]}; padding: 10px; }}
-        QListWidget {{ background: {p["panel"]}; border: 0; outline: 0; padding: 6px; }}
-        QListWidget::item {{ padding: 10px; border-radius: 7px; }}
-        QListWidget::item:selected {{ background: {p["hover"]}; color: {p["gold"]}; }}
-        QPushButton {{ background: {p["tab"]}; color: {p["text"]}; border: 1px solid {p["border"]};
-            border-radius: 9px; padding: 8px 12px; }}
-        QPushButton:hover {{ border-color: {p["gold"]}; }}
-        QProgressBar {{ background: {p["panel"]}; border: 0; border-radius: 3px; height: 4px; }}
-        QProgressBar::chunk {{ background: {p["gold"]}; border-radius: 3px; }}
-        """
- 
+        return build_stylesheet(self.theme_name)
+
     def _build_navigation(self):
         toolbar = QToolBar("Main navigation")
         toolbar.setMovable(False)
@@ -128,6 +88,9 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Find", "Find text on this page", self.toggle_find, "Ctrl+F")
         self._action(toolbar, "−", "Zoom out", lambda: self.change_zoom(-0.1), "Ctrl+-")
         self._action(toolbar, "+", "Zoom in", lambda: self.change_zoom(0.1), "Ctrl++")
+        self._action(toolbar, "Reader", "Simplify the current page", self.toggle_reader_mode, "Ctrl+Shift+E")
+        self._action(toolbar, "Translate", "Translate the current page", self.translate_page)
+        self._action(toolbar, "Capture", "Save a screenshot of this page", self.save_screenshot)
         self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
 
@@ -200,12 +163,17 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(view_menu, "Fullscreen", self.toggle_fullscreen, "F11")
         self._menu_action(view_menu, "Show bookmarks", self.show_bookmarks, "Ctrl+Shift+B")
         self._menu_action(view_menu, "Show history", self.show_history, "Ctrl+H")
+        self._menu_action(view_menu, "Reader mode", self.toggle_reader_mode, "Ctrl+Shift+E")
+        self._menu_action(view_menu, "Translate page", self.translate_page)
+        self._menu_action(view_menu, "Capture page screenshot", self.save_screenshot)
 
         tools_menu = bar.addMenu("Tools")
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab, "Ctrl+Shift+T")
+        self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
         for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
             self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
@@ -216,6 +184,10 @@ class GoldDiamondWindow(QMainWindow):
     def _register_shortcuts(self):
         self._shortcut("Ctrl+Shift+R", self.reload_page)
         self._shortcut("Escape", self.close_find)
+        self._shortcut("Ctrl+L", self.focus_address)
+        self._shortcut("Ctrl+Shift+T", self.reopen_closed_tab)
+        self._shortcut("Ctrl+J", self.show_downloads)
+        self._shortcut("Ctrl+Shift+E", self.toggle_reader_mode)
 
     def _action(self, toolbar, label, tooltip, callback, shortcut=None):
         action = QAction(label, self)
@@ -255,6 +227,7 @@ class GoldDiamondWindow(QMainWindow):
         self.tabs.setCurrentIndex(index)
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
         view.titleChanged.connect(lambda title, browser=view: self.update_title(title, browser))
+        view.iconChanged.connect(lambda icon, browser=view: self.update_icon(icon, browser))
         view.loadStarted.connect(self.load_started)
         view.loadProgress.connect(self.progress.setValue)
         view.loadFinished.connect(lambda ok, browser=view: self.page_loaded(ok, browser))
@@ -270,25 +243,11 @@ class GoldDiamondWindow(QMainWindow):
         self.address.setFocus()
 
     def start_page_html(self) -> str:
-        tiles = [
-            ("Search", "https://www.google.com", "⌕", "Search the web"),
-            ("YouTube", "https://www.youtube.com", "▶", "Videos and creators"),
-            ("Wikipedia", "https://www.wikipedia.org", "◇", "Explore knowledge"),
-            ("GitHub", "https://github.com", "⌘", "Build something"),
-            ("DuckDuckGo", "https://duckduckgo.com", "◈", "Private search"),
-            ("Memingo", "https://github.com/Reaccionador2Jeje/Memingo", "M", "The language behind this browser"),
-        ]
-        cards = "".join(
-            f'<a class="tile" href="{url}"><span class="glyph">{glyph}</span><b>{name}</b><small>{desc}</small></a>'
-            for name, url, glyph, desc in tiles
-        )
-        return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-        <style>
-        *{{box-sizing:border-box}} body{{margin:0;background:radial-gradient(ellipse at 50% 0%,#26364d 0%,#111a29 38%,#090e17 80%);color:#f4f7fb;font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}}
-        main{{width:min(900px,90%);padding:60px 20px;text-align:center}} .mark{{font-size:44px;color:#e5b85c;text-shadow:0 0 35px #d5a84b55}} h1{{font-size:42px;letter-spacing:1px;margin:10px 0 8px}} h1 em{{font-style:normal;color:#e5b85c}} .sub{{color:#9eafc4;font-size:15px;margin-bottom:44px}} .line{{height:1px;width:100px;background:linear-gradient(90deg,transparent,#e5b85c,transparent);margin:22px auto 30px}}
-        .grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;text-align:left}} .tile{{text-decoration:none;color:#f4f7fb;background:linear-gradient(145deg,#1b293c,#121c2b);border:1px solid #34465a;border-radius:17px;padding:22px;min-height:125px;transition:.18s}} .tile:hover{{border-color:#e5b85c;transform:translateY(-3px);background:#24364b}} .glyph{{display:block;font-size:26px;color:#75d8e8;margin-bottom:13px}} b{{display:block;font-size:15px}} small{{display:block;color:#94a6bb;margin-top:5px;font-size:12px}} footer{{margin-top:44px;color:#71839a;font-size:12px}} .spark{{color:#75d8e8}}
-        @media(max-width:600px){{h1{{font-size:30px}}.grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}main{{padding:30px 5px}}}}
-        </style></head><body><main><div class="mark">◆</div><h1>GOLD <em>&</em> DIAMOND</h1><div class="sub">A brighter way to explore the web.</div><div class="line"></div><section class="grid">{cards}</section><footer>POWERED BY <span class="spark">MEMINGO</span> · CHROMIUM ENGINE · MADE TO EXPLORE</footer></main></body></html>"""
+        try:
+            bookmarks = list_bookmarks()
+        except Exception:
+            bookmarks = []
+        return build_dashboard(self.theme_name, bookmarks)
 
     def navigate(self):
         try:
@@ -328,9 +287,15 @@ class GoldDiamondWindow(QMainWindow):
     def update_title(self, title: str, browser: QWebEngineView):
         index = self.tabs.indexOf(browser)
         if index >= 0:
-            self.tabs.setTabText(index, (title or "New tab")[:28])
+            prefix = "◆ " if browser.property("pinned_tab") else ""
+            self.tabs.setTabText(index, prefix + (title or "New tab")[:26])
             if browser is self.current_view():
                 self.setWindowTitle(f"{title or 'Gold & Diamond'}  ◆  Gold & Diamond Browser")
+
+    def update_icon(self, icon: QIcon, browser: QWebEngineView):
+        index = self.tabs.indexOf(browser)
+        if index >= 0 and not icon.isNull():
+            self.tabs.setTabIcon(index, icon)
 
     def sync_address(self, _index: int):
         view = self.current_view()
@@ -504,9 +469,13 @@ class GoldDiamondWindow(QMainWindow):
     def show_settings(self):
         menu = QMenu("Quick settings", self)
         appearance = menu.addMenu("Appearance")
-        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
+        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light"), ("forest", "Emerald Forest")):
             appearance.addAction(label, lambda selected=theme_name: self.change_theme(selected))
         menu.addSeparator()
+        restore_action = menu.addAction("Restore tabs on startup")
+        restore_action.setCheckable(True)
+        restore_action.setChecked(self.settings.get("restore_session", True))
+        restore_action.triggered.connect(self.toggle_session_restore)
         menu.addAction("Set current page as startup page", self.set_startup_page)
         menu.addAction("Google search", lambda: self.change_search("https://www.google.com/search?q="))
         menu.addAction("DuckDuckGo search", lambda: self.change_search("https://duckduckgo.com/?q="))
@@ -514,7 +483,7 @@ class GoldDiamondWindow(QMainWindow):
         menu.exec(self.mapToGlobal(self.rect().center()))
 
     def change_theme(self, theme_name: str):
-        if theme_name not in {"graphite", "midnight", "pearl"}:
+        if theme_name not in {"graphite", "midnight", "pearl", "forest"}:
             return
         try:
             self.settings = save_setting("theme", theme_name)
@@ -551,6 +520,113 @@ class GoldDiamondWindow(QMainWindow):
             save_session(urls)
         except Exception as exc:
             self.status.showMessage(f"Could not save session: {exc}", 5000)
+
+    def focus_address(self):
+        self.address.setFocus()
+        self.address.selectAll()
+
+    def show_tab_context_menu(self, position):
+        tab_bar = self.tabs.tabBar()
+        index = tab_bar.tabAt(position)
+        menu = QMenu(self)
+        if index < 0:
+            menu.addAction("New tab", self.new_tab)
+            menu.addAction("Reopen closed tab", self.reopen_closed_tab)
+        else:
+            view = self.tabs.widget(index)
+            menu.addAction("Duplicate tab", lambda: self.duplicate_tab(index))
+            pin_text = "Unpin tab" if view.property("pinned_tab") else "Pin tab"
+            menu.addAction(pin_text, lambda: self.toggle_pin_tab(index))
+            menu.addAction("Reload tab", view.reload)
+            menu.addSeparator()
+            menu.addAction("Close tab", lambda: self.close_tab(index))
+            menu.addAction("Close other tabs", lambda: self.close_other_tabs(index))
+            menu.addAction("New tab", self.new_tab)
+            menu.addAction("Reopen closed tab", self.reopen_closed_tab)
+        menu.exec(tab_bar.mapToGlobal(position))
+
+    def duplicate_tab(self, index: int):
+        view = self.tabs.widget(index)
+        if not isinstance(view, QWebEngineView):
+            return
+        url = view.url().toString()
+        private = bool(view.property("private_mode"))
+        self.new_tab(url if url.startswith(("https://", "http://")) else None, private=private)
+
+    def toggle_pin_tab(self, index: int):
+        view = self.tabs.widget(index)
+        if not isinstance(view, QWebEngineView):
+            return
+        pinned = not bool(view.property("pinned_tab"))
+        view.setProperty("pinned_tab", pinned)
+        title = view.title() or "New tab"
+        self.tabs.setTabText(index, ("◆ " if pinned else "") + title[:26])
+        self.status.showMessage("Tab pinned" if pinned else "Tab unpinned", 2500)
+
+    def close_other_tabs(self, keep_index: int):
+        for index in reversed(range(self.tabs.count())):
+            if index != keep_index:
+                self.close_tab(index)
+
+    def reopen_closed_tab(self):
+        if not self.closed_tabs:
+            self.status.showMessage("There are no recently closed tabs", 3000)
+            return
+        item = self.closed_tabs.pop()
+        self.new_tab(item["url"])
+        self.status.showMessage("Recently closed tab restored", 3000)
+
+    def toggle_session_restore(self):
+        enabled = not self.settings.get("restore_session", True)
+        self.settings = save_setting("restore_session", enabled)
+        self.status.showMessage("Session restore " + ("enabled" if enabled else "disabled"), 3500)
+
+    def toggle_reader_mode(self):
+        view = self.current_view()
+        if not view:
+            return
+        if view.property("reader_mode"):
+            view.setProperty("reader_mode", False)
+            view.reload()
+            self.status.showMessage("Reader mode disabled", 3000)
+            return
+        script = """
+        (() => {
+          const style = document.createElement('style');
+          style.id = 'gdb-reader-style';
+          style.textContent = 'html,body{background:#f4f0e7!important;color:#252525!important;font-family:Georgia,serif!important}body{max-width:820px!important;margin:40px auto!important;padding:32px!important;line-height:1.85!important;font-size:19px!important;box-shadow:0 8px 45px #0002!important}img,video,figure{max-width:100%!important;height:auto!important}nav,aside,footer,[role="navigation"],[role="complementary"],. 광고{display:none!important}a{color:#76551b!important}h1,h2,h3{line-height:1.25!important}';
+          document.getElementById('gdb-reader-style')?.remove();
+          document.head.appendChild(style);
+        })();
+        """
+        view.page().runJavaScript(script)
+        view.setProperty("reader_mode", True)
+        self.status.showMessage("Reader mode enabled · reload to restore original layout", 4500)
+
+    def translate_page(self):
+        view = self.current_view()
+        if not view:
+            return
+        url = view.url().toString()
+        if not url.startswith(("https://", "http://")):
+            self.status.showMessage("Open a website first", 3000)
+            return
+        from urllib.parse import quote
+        self.navigate_to("https://translate.google.com/translate?sl=auto&tl=es&u=" + quote(url, safe=""))
+        
+    def save_screenshot(self):
+        view = self.current_view()
+        if not view:
+            return
+        default = Path.home() / "Downloads" / "gold-diamond-page.png"
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Capture page", str(default), "PNG image (*.png);;JPEG image (*.jpg *.jpeg)"
+        )
+        if filename:
+            if view.grab().save(filename):
+                self.status.showMessage(f"Screenshot saved: {filename}", 5000)
+            else:
+                self.status.showMessage("Screenshot could not be saved", 4000)
 
     def change_search(self, engine: str):
         self.settings = save_setting("search_engine", engine)
@@ -607,12 +683,19 @@ class GoldDiamondWindow(QMainWindow):
         self.close_tab(self.tabs.currentIndex())
 
     def close_tab(self, index: int):
-        if self.tabs.count() <= 1:
-            self.new_tab()
-        widget = self.tabs.widget(index)
+        if index < 0 or index >= self.tabs.count():
+            return
+        view = self.tabs.widget(index)
+        if isinstance(view, QWebEngineView):
+            url = view.url().toString()
+            if not view.property("private_mode") and url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:
+                self.closed_tabs.append({"url": url, "title": view.title() or url})
+                self.closed_tabs = self.closed_tabs[-10:]
         self.tabs.removeTab(index)
-        if widget:
-            widget.deleteLater()
+        if view:
+            view.deleteLater()
+        if self.tabs.count() == 0:
+            self.new_tab()
 
     def closeEvent(self, event):
         self.persist_session()
