@@ -69,26 +69,46 @@ def load_config() -> dict[str, Any]:
     return config
 
 
-def load_settings() -> dict[str, Any]:
+def _run_data_module(module: str, request: dict[str, Any]) -> dict[str, Any]:
     output = run_memingo(
-        ECOSYSTEM / "settings.mgo",
-        extra_env={"GDB_REQUEST": json.dumps({"action": "get"})},
+        ECOSYSTEM / module,
+        extra_env={"GDB_REQUEST": json.dumps(request)},
         project_directory=DATA_DIR,
     )
     if not output:
-        raise RuntimeError("Memingo settings module returned no result")
-    return json.loads(output[-1])
+        raise RuntimeError(f"Memingo data module {module} returned no result")
+    result = json.loads(output[-1])
+    if not isinstance(result, dict):
+        raise RuntimeError(f"Memingo data module {module} must return a JSON object")
+    return result
+
+
+def load_settings() -> dict[str, Any]:
+    return _run_data_module("settings.mgo", {"action": "get"})
 
 
 def save_setting(key: str, value: Any) -> dict[str, Any]:
-    output = run_memingo(
-        ECOSYSTEM / "settings.mgo",
-        extra_env={"GDB_REQUEST": json.dumps({"action": "set", "key": key, "value": value})},
-        project_directory=DATA_DIR,
-    )
-    if not output:
-        raise RuntimeError("Memingo settings module returned no result")
-    return json.loads(output[-1])
+    return _run_data_module("settings.mgo", {"action": "set", "key": key, "value": value})
+
+
+def list_bookmarks() -> list[dict[str, Any]]:
+    return _run_data_module("bookmarks.mgo", {"action": "list"}).get("bookmarks", [])
+
+
+def add_bookmark(url: str, title: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "bookmarks.mgo", {"action": "add", "url": url, "title": title}
+    ).get("bookmarks", [])
+
+
+def record_history(url: str, title: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "history.mgo", {"action": "add", "url": url, "title": title}
+    ).get("history", [])
+
+
+def clear_history() -> list[dict[str, Any]]:
+    return _run_data_module("history.mgo", {"action": "clear"}).get("history", [])
 
 
 def resolve_url(value: str, search_engine: str | None = None) -> str:
