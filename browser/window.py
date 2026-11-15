@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from .memingo_bridge import resolve_url
+from .memingo_bridge import load_settings, resolve_url, save_setting
 
 
 class GoldDiamondWindow(QMainWindow):
@@ -18,6 +18,7 @@ class GoldDiamondWindow(QMainWindow):
         super().__init__()
         self.config = config
         self.theme = config["theme"]
+        self.settings = load_settings()
         self.setWindowTitle(f'{config["name"]} — {config["version"]}')
         window = config.get("window", {})
         self.resize(window.get("width", 1280), window.get("height", 820))
@@ -53,6 +54,7 @@ class GoldDiamondWindow(QMainWindow):
         self.add_action(toolbar, "›", "Forward", self.go_forward, "Alt+Right")
         self.add_action(toolbar, "↻", "Reload", self.reload_page, "Ctrl+R")
         self.add_action(toolbar, "⌂", "Home", self.go_home, "Alt+Home")
+        self.add_action(toolbar, "☆", "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
 
         self.address = QLineEdit()
         self.address.setPlaceholderText("Search or enter a web address")
@@ -64,7 +66,7 @@ class GoldDiamondWindow(QMainWindow):
 
         self.status = QStatusBar()
         self.setStatusBar(self.status)
-        self.new_tab(config.get("home_url", "https://www.google.com"))
+        self.new_tab(self.settings.get("startup_page", config.get("home_url", "https://www.google.com")) )
 
     def add_action(self, toolbar: QToolBar, label: str, tooltip: str, callback, shortcut: str):
         action = QAction(label, self)
@@ -90,7 +92,7 @@ class GoldDiamondWindow(QMainWindow):
 
     def navigate(self):
         try:
-            url = resolve_url(self.address.text())
+            url = resolve_url(self.address.text(), self.settings.get("search_engine"))
             view = self.current_view()
             if view:
                 view.setUrl(QUrl(url))
@@ -126,7 +128,18 @@ class GoldDiamondWindow(QMainWindow):
     def go_home(self):
         view = self.current_view()
         if view:
-            view.setUrl(QUrl(self.config.get("home_url", "https://www.google.com")))
+            view.setUrl(QUrl(self.settings.get("startup_page", self.config.get("home_url", "https://www.google.com"))))
+
+    def set_startup_page(self):
+        view = self.current_view()
+        if not view:
+            return
+        url = view.url().toString()
+        try:
+            self.settings = save_setting("startup_page", url)
+            self.status.showMessage("Startup page saved", 4000)
+        except Exception as exc:
+            self.status.showMessage(f"Could not save startup page: {exc}", 6000)
 
     def close_current_tab(self):
         self.close_tab(self.tabs.currentIndex())
