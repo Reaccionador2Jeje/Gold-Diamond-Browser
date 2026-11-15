@@ -2,7 +2,8 @@
 import unittest
 
 from browser.memingo_bridge import (
-    load_config, load_settings, resolve_url, save_setting,
+    add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
+    record_history, resolve_url, save_setting,
 )
 
 
@@ -23,6 +24,15 @@ class MemingoBrowserTests(unittest.TestCase):
         self.assertEqual(settings["startup_page"], "https://example.com")
         # Restore the default so this test is repeatable.
         save_setting("startup_page", "https://www.google.com")
+
+    def test_bookmarks_are_managed_by_memingo(self):
+        add_bookmark("https://example.com", "Example")
+        self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks()))
+
+    def test_history_records_visits(self):
+        history = record_history("https://example.org", "Example Org")
+        self.assertTrue(any(item["url"] == "https://example.org" for item in history))
+        clear_history()
 
     def test_explicit_url_is_preserved(self):
         self.assertEqual(resolve_url("https://example.com"), "https://example.com")
