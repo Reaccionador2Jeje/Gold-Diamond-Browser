@@ -1,0 +1,7 @@
+[project]
+name = "gold-diamond-browser"
+version = "0.1.0"
+description = "Gold & Diamond Browser — a Memingo-powered desktop web browser"
+entry = "main.mgo"
+
+[dependencies]
