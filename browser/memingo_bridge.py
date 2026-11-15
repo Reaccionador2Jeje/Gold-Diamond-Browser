@@ -91,34 +91,44 @@ def save_setting(key: str, value: Any) -> dict[str, Any]:
     return _run_data_module("settings.mgo", {"action": "set", "key": key, "value": value})
 
 
-def list_bookmarks() -> list[dict[str, Any]]:
-    return _run_data_module("bookmarks.mgo", {"action": "list"}).get("bookmarks", [])
-
-
-def add_bookmark(url: str, title: str) -> list[dict[str, Any]]:
+def list_bookmarks(profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "bookmarks.mgo", {"action": "add", "url": url, "title": title}
+        "bookmarks.mgo", {"action": "list", "profile_id": profile_id}
     ).get("bookmarks", [])
 
 
-def remove_bookmark(url: str) -> list[dict[str, Any]]:
+def add_bookmark(url: str, title: str, profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "bookmarks.mgo", {"action": "remove", "url": url}
+        "bookmarks.mgo",
+        {"action": "add", "url": url, "title": title, "profile_id": profile_id},
     ).get("bookmarks", [])
 
 
-def record_history(url: str, title: str) -> list[dict[str, Any]]:
+def remove_bookmark(url: str, profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "history.mgo", {"action": "add", "url": url, "title": title}
+        "bookmarks.mgo", {"action": "remove", "url": url, "profile_id": profile_id}
+    ).get("bookmarks", [])
+
+
+def record_history(
+    url: str, title: str, profile_id: str = "default"
+) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "history.mgo",
+        {"action": "add", "url": url, "title": title, "profile_id": profile_id},
     ).get("history", [])
 
 
-def list_history() -> list[dict[str, Any]]:
-    return _run_data_module("history.mgo", {"action": "list"}).get("history", [])
+def list_history(profile_id: str = "default") -> list[dict[str, Any]]:
+    return _run_data_module(
+        "history.mgo", {"action": "list", "profile_id": profile_id}
+    ).get("history", [])
 
 
-def clear_history() -> list[dict[str, Any]]:
-    return _run_data_module("history.mgo", {"action": "clear"}).get("history", [])
+def clear_history(profile_id: str = "default") -> list[dict[str, Any]]:
+    return _run_data_module(
+        "history.mgo", {"action": "clear", "profile_id": profile_id}
+    ).get("history", [])
 
 
 def load_session(profile_id: str = "default") -> list[str]:
