@@ -464,6 +464,7 @@ class GoldDiamondWindow(QMainWindow):
         except Exception as exc:
             self.status.showMessage(f"Could not load Reading List: {exc}", 5000)
             return
+        entries = entries if isinstance(entries, list) else []
         menu = QMenu("Reading List · Read later", self)
         if not entries:
             empty = menu.addAction("No saved pages yet")
@@ -520,6 +521,7 @@ class GoldDiamondWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.warning(self, "Workspaces", f"Could not load workspaces: {exc}")
             return
+        workspaces = workspaces if isinstance(workspaces, list) else []
         valid = [
             item for item in workspaces
             if isinstance(item, dict) and isinstance(item.get("tabs"), list)
@@ -529,7 +531,7 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("No saved workspaces yet", 3500)
             return
         labels = [
-            f'{item.get("name") or "Workspace"} · {len(item["tabs"])} tabs'
+            f'{item.get("name") if isinstance(item.get("name"), str) and item.get("name") else "Workspace"} · {len(item["tabs"])} tabs'
             for item in valid
         ]
         selected, accepted = QInputDialog.getItem(
