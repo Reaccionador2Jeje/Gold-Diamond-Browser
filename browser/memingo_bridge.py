@@ -107,6 +107,10 @@ def record_history(url: str, title: str) -> list[dict[str, Any]]:
     ).get("history", [])
 
 
+def list_history() -> list[dict[str, Any]]:
+    return _run_data_module("history.mgo", {"action": "list"}).get("history", [])
+
+
 def clear_history() -> list[dict[str, Any]]:
     return _run_data_module("history.mgo", {"action": "clear"}).get("history", [])
 
