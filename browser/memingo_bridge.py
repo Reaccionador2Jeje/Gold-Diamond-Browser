@@ -121,6 +121,20 @@ def clear_history() -> list[dict[str, Any]]:
     return _run_data_module("history.mgo", {"action": "clear"}).get("history", [])
 
 
+def load_session() -> list[str]:
+    return _run_data_module("sessions.mgo", {"action": "get"}).get("tabs", [])
+
+
+def save_session(urls: list[str]) -> list[str]:
+    clean_urls = [
+        url for url in urls
+        if isinstance(url, str) and url.startswith(("https://", "http://"))
+    ]
+    return _run_data_module(
+        "sessions.mgo", {"action": "save", "tabs": clean_urls}
+    ).get("tabs", [])
+
+
 def resolve_url(value: str, search_engine: str | None = None) -> str:
     environment = {"GDB_INPUT": value}
     if search_engine:
