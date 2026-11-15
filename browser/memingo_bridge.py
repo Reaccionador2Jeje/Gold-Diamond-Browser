@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -69,10 +70,18 @@ def load_config() -> dict[str, Any]:
     return config
 
 
-def _run_data_module(module: str, request: dict[str, Any]) -> dict[str, Any]:
+def _run_data_module(
+    module: str,
+    request: dict[str, Any],
+    *,
+    storage_path: str | None = None,
+) -> dict[str, Any]:
+    environment = {"GDB_REQUEST": json.dumps(request)}
+    if storage_path:
+        environment["GDB_STORAGE_PATH"] = storage_path
     output = run_memingo(
         ECOSYSTEM / module,
-        extra_env={"GDB_REQUEST": json.dumps(request)},
+        extra_env=environment,
         project_directory=DATA_DIR,
     )
     if not output:
@@ -81,6 +90,12 @@ def _run_data_module(module: str, request: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(result, dict):
         raise RuntimeError(f"Memingo data module {module} must return a JSON object")
     return result
+
+
+def _profile_storage_path(collection: str, profile_id: str) -> str:
+    safe_id = re.sub(r"[^a-zA-Z0-9_-]", "-", profile_id).strip("-_")[:32] or "default"
+    suffix = "" if safe_id == "default" else f"-{safe_id}"
+    return f"data/{collection}{suffix}.json"
 
 
 def load_settings() -> dict[str, Any]:
@@ -93,20 +108,23 @@ def save_setting(key: str, value: Any) -> dict[str, Any]:
 
 def list_bookmarks(profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "bookmarks.mgo", {"action": "list", "profile_id": profile_id}
+        "bookmarks.mgo", {"action": "list"},
+        storage_path=_profile_storage_path("bookmarks", profile_id),
     ).get("bookmarks", [])
 
 
 def add_bookmark(url: str, title: str, profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
         "bookmarks.mgo",
-        {"action": "add", "url": url, "title": title, "profile_id": profile_id},
+        {"action": "add", "url": url, "title": title},
+        storage_path=_profile_storage_path("bookmarks", profile_id),
     ).get("bookmarks", [])
 
 
 def remove_bookmark(url: str, profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "bookmarks.mgo", {"action": "remove", "url": url, "profile_id": profile_id}
+        "bookmarks.mgo", {"action": "remove", "url": url},
+        storage_path=_profile_storage_path("bookmarks", profile_id),
     ).get("bookmarks", [])
 
 
@@ -115,19 +133,22 @@ def record_history(
 ) -> list[dict[str, Any]]:
     return _run_data_module(
         "history.mgo",
-        {"action": "add", "url": url, "title": title, "profile_id": profile_id},
+        {"action": "add", "url": url, "title": title},
+        storage_path=_profile_storage_path("history", profile_id),
     ).get("history", [])
 
 
 def list_history(profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "history.mgo", {"action": "list", "profile_id": profile_id}
+        "history.mgo", {"action": "list"},
+        storage_path=_profile_storage_path("history", profile_id),
     ).get("history", [])
 
 
 def clear_history(profile_id: str = "default") -> list[dict[str, Any]]:
     return _run_data_module(
-        "history.mgo", {"action": "clear", "profile_id": profile_id}
+        "history.mgo", {"action": "clear"},
+        storage_path=_profile_storage_path("history", profile_id),
     ).get("history", [])
 
 
