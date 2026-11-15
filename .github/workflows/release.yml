@@ -50,7 +50,7 @@ jobs:
         run: |
           choco install innosetup --yes --no-progress
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          & $iscc packaging/windows/installer.iss
+          & $iscc "/DAppVersion=$env:VERSION" packaging/windows/installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build Linux DEB and RPM packages
@@ -79,7 +79,7 @@ jobs:
           Icon=/opt/gold-diamond-browser/assets/gold-diamond-icon.png
           StartupNotify=true
           EOF
-          fpm -s dir -t deb -C package-root -n gold-diamond-browser -v 0.1.0 --architecture amd64 --description "Gold & Diamond Browser desktop web browser" opt usr
+          fpm -s dir -t deb -C package-root -n gold-diamond-browser -v "$VERSION" --architecture amd64 --description "Gold & Diamond Browser desktop web browser" opt usr
           fpm -s dir -t rpm -C package-root -n gold-diamond-browser -v 0.1.0 --architecture x86_64 --description "Gold & Diamond Browser desktop web browser" opt usr
 
       - name: Build macOS DMG
@@ -88,10 +88,10 @@ jobs:
         run: |
           brew install create-dmg
           create-dmg \
-            --volname "Gold & Diamond Browser 0.1.0" \
+            --volname "Gold & Diamond Browser $VERSION" \
             --window-size 700 450 \
             --app-drop-link 520 220 \
-            "Gold-Diamond-Browser-0.1.0.dmg" \
+            "Gold-Diamond-Browser-$VERSION.dmg" \
             "dist/GoldDiamondBrowser.app"
 
       - name: Collect Windows installer
@@ -99,7 +99,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path release-files | Out-Null
-          Copy-Item "dist/Gold-Diamond-Browser-Setup-0.1.0.exe" release-files/
+          Copy-Item "dist/Gold-Diamond-Browser-Setup-$env:VERSION.exe" release-files/
 
       - name: Collect Linux packages
         if: runner.os == 'Linux'
@@ -111,7 +111,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p release-files
-          mv Gold-Diamond-Browser-0.1.0.dmg release-files/
+          mv Gold-Diamond-Browser-$VERSION.dmg release-files/
 
       - name: Upload platform installers
         uses: actions/upload-artifact@v4
