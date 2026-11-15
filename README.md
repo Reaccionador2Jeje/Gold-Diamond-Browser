@@ -29,7 +29,9 @@
 - Theme preferences and saved sessions are persisted by Memingo.
 - Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
 - Dark graphite UI with gold and diamond accents.
-- Browser profiles with separate persistent Chromium storage; new tabs use the active profile while existing tabs remain in their original profile.\n- Built-in Extension Center for Reader Mode, Quick Translate and Page Capture; these are native browser tools, not Chrome Web Store extensions.\n- Privacy Center to clear the active profile cache, cookies and locally recorded browsing history. This does not provide anonymity or erase website/network records.\n- Automated native installers for Windows, Linux and macOS are built by GitHub Actions after all platform builds succeed.
+- Browser profiles with separate persistent Chromium storage; new tabs use the active profile while existing tabs remain in their original profile.\n- Built-in Extension Center for Reader Mode, Quick Translate and Page Capture; these are native browser tools, not Chrome Web Store extensions.\n- Privacy Center to clear the active profile cache, cookies and locally recorded browsing history. This does not provide anonymity or erase website/network records.\n- Named Workspaces save and restore groups of regular tabs through Memingo-managed storage.
+- Split View displays two independent web pages side by side, with a dedicated address field for the secondary pane.
+- Automated native installers for Windows, Linux and macOS are built by GitHub Actions after all platform builds succeed.
 
 ## Architecture — Memingo-First
 
@@ -40,6 +42,7 @@ Memingo is the primary application and policy language. New browser behavior sho
 - `ecosystem/settings.mgo` owns default settings and persistent settings updates.
 - `ecosystem/bookmarks.mgo` owns bookmark storage and updates.
 - `ecosystem/history.mgo` owns visit recording and history storage.
+- `ecosystem/workspaces.mgo` owns named workspace persistence and retrieval.
 - `browser/memingo_bridge.py` is a narrow execution and serialization adapter.
 - `browser/window.py` is the Qt browser controller and Chromium WebEngine integration.
 - `browser/ui/theme.py` contains reusable visual themes.
@@ -160,6 +163,8 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 | Ctrl+L | Focus address bar |
 | Ctrl+J | Open downloads |
 | Ctrl+Shift+L | Toggle library sidebar |
+| Ctrl+Shift+W | Save current tabs as a workspace |
+| Ctrl+Shift+V | Toggle Split View |
 | Ctrl+F | Find text on page |
 | Ctrl++ / Ctrl+- | Zoom in / out |
 | Ctrl+0 | Reset zoom |
