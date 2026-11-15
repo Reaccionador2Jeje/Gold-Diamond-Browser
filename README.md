@@ -13,7 +13,10 @@
 - Isolated private tabs that do not write visits to the browser's local history.
 - In-page text search, adjustable zoom and PDF export.
 - Download tracking for the current session and quick access to the Downloads folder.
-- Search engine selection: Google, DuckDuckGo or Bing.\n- Three switchable interface themes: Graphite Gold, Midnight Blue and Pearl Light.\n- Session restore: reopen regular tabs after restarting; private tabs are excluded.\n- Theme preferences and saved sessions are persisted by Memingo.
+- Search engine selection: Google, DuckDuckGo or Bing.
+- Three switchable interface themes: Graphite Gold, Midnight Blue and Pearl Light.
+- Session restore: reopen regular tabs after restarting; private tabs are excluded.
+- Theme preferences and saved sessions are persisted by Memingo.
 - Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
 - Dark graphite UI with gold and diamond accents.
 - Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
@@ -126,5 +129,6 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 ## Roadmap
 
 - 0.2.0 — Premium interface, dashboard, private tabs, downloads, PDF export and expanded Memingo-first features.
-- 0.3.0 — theme system, session restore and Memingo-managed browser preferences.\n- Future — extension framework, profiles and advanced privacy controls.
+- 0.3.0 — theme system, session restore and Memingo-managed browser preferences.
+- Future — extension framework, profiles and advanced privacy controls.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
