@@ -692,9 +692,11 @@ class GoldDiamondWindow(QMainWindow):
     def show_about(self):
         QMessageBox.about(
             self, "About Gold & Diamond Browser",
-            "<h2 style='color:#e5b85c'>◆ Gold & Diamond Browser</h2>"
+            "<h2 style='color:#e5b85c'>◆ Gold &amp; Diamond Browser</h2>"
+            "<p>Created by <b>AtDev Dev</b>.</p>"
             "<p>A modern browsing experience powered by Chromium and Memingo.</p>"
-            "<p><b>Memingo-First.</b> Built to explore, learn and create.</p>",
+            "<p><b>Memingo-First.</b> Built to explore, learn and create.</p>"
+            "<p>Distributed under the Apache License 2.0.</p>",
         )
 
     def go_back(self):
