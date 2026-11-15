@@ -9,6 +9,10 @@ when file_exists(storage_path) {
     items = json_parse(read_file(storage_path))
 }
 
+ritual keep_unique(item) {
+    drop item.url != request.url
+}
+
 when request.action == "add" {
     when request.url != "" {
         items = filter(items, keep_unique)
@@ -19,10 +23,6 @@ when request.action == "add" {
         })
         write_file(storage_path, json_stringify(items))
     }
-}
-
-ritual keep_unique(item) {
-    drop item.url != request.url
 }
 
 when request.action == "remove" {
