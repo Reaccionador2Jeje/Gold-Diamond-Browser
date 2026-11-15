@@ -2,7 +2,7 @@
 
 **Gold & Diamond Browser** is a cross-platform desktop browser built with Memingo and Qt WebEngine (Chromium).
 
-## Version 0.4 development — Expanded experience
+## Version 0.5 development — AI and desktop experience
 
 - Real websites rendered with Qt WebEngine.
 - Browser configuration and address/search resolution are authored in Memingo.
@@ -20,6 +20,11 @@
 - Tab context menu with duplicate, pin, close-other-tabs and reopen-closed-tab actions.
 - Reader mode, page translation, page screenshots and faster address-bar focus shortcuts.
 - Browser dashboard search follows the selected search engine.
+- Gold & Diamond AI chat dialog with an OpenAI-compatible API endpoint and model selector.
+- Dedicated settings window with General, Appearance, AI assistant, Credits and License sections.
+- gold-diamond.local is the default branded home page and new-tab address.
+- AtDev Dev credits and Apache License 2.0 attribution in the application.
+- A custom gold-and-cyan diamond app icon is generated as PNG, Windows ICO and macOS ICNS during packaging; Linux desktop launchers include the icon.
 - Session restore: reopen regular tabs after restarting; private tabs are excluded.
 - Theme preferences and saved sessions are persisted by Memingo.
 - Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
@@ -39,6 +44,9 @@ Memingo is the primary application and policy language. New browser behavior sho
 - `browser/window.py` is the Qt browser controller and Chromium WebEngine integration.
 - `browser/ui/theme.py` contains reusable visual themes.
 - `browser/ui/dashboard.py` renders the branded new-tab dashboard.
+- `browser/ui/settings_dialog.py` provides the native settings and credits interface.
+- `browser/ai_assistant.py` provides the optional OpenAI-compatible chat window.
+- `assets/gold-diamond-icon.svg` is the scalable brand icon; packaging generates native icon formats.
 - `run.py` starts the desktop application.
 
 Python remains only where a native host is required: Qt WebEngine, desktop widgets, process startup, user data directory discovery and the Memingo runtime adapter. Browser policies and user-facing application rules belong in Memingo. The long-term goal is to reduce the host layer as Memingo gains suitable native bindings.
@@ -163,5 +171,6 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 - 0.2.0 — Premium interface, dashboard, private tabs, downloads, PDF export and expanded Memingo-first features.
 - 0.3.0 — theme system, session restore and Memingo-managed browser preferences.
 - 0.4 development — modular UI, dashboard refresh, tab management and page tools.
+- 0.5 development — AI assistant, full settings, AtDev Dev credits, Apache license attribution, branded home page and desktop icon.
 - Future — extension framework, profiles, sync and advanced privacy controls.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
