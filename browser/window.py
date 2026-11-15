@@ -40,7 +40,7 @@ class GoldDiamondWindow(QMainWindow):
         self.download_items = []
         self.closed_tabs: list[dict[str, str]] = []
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
-        icon_path = Path(__file__).resolve().parents[1] / "assets" / "gold-diamond-icon.png"
+        icon_path = Path(__file__).resolve().parents[1] / "assets" / "gold-diamond-icon.svg"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         self.setWindowIconText("G◆D")
