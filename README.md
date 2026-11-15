@@ -125,18 +125,18 @@ The release workflow builds these packages on native GitHub-hosted runners:
 | Platform | Package | Installation |
 |---|---|---|
 | Windows x64 | \`.exe\` | Graphical Inno Setup wizard, Start Menu shortcut and optional desktop shortcut |
-| Debian/Ubuntu x64 | \`.deb\` | Install with the system package installer or \`sudo apt install ./gold-diamond-browser_0.1.0_amd64.deb\` |
-| Fedora/RHEL x64 | \`.rpm\` | Install with the system package installer or \`sudo dnf install ./gold-diamond-browser-0.1.0-1.x86_64.rpm\` |
+| Debian/Ubuntu x64 | \`.deb\` | Install with the system package installer or \`sudo apt install ./gold-diamond-browser_0.5.0_amd64.deb\` |
+| Fedora/RHEL x64 | \`.rpm\` | Install with the system package installer or \`sudo dnf install ./gold-diamond-browser-0.5.0-1.x86_64.rpm\` |
 | macOS | \`.dmg\` | Open the disk image and drag the app to Applications |
 
-To publish version 0.1.0, create and push the tag:
+To publish version 0.5.0, create and push the tag:
 
 \`\`\`bash
-git tag v0.1.0
+git tag v0.5.0
 git push origin v0.1.0
 \`\`\`
 
-GitHub Actions then builds all platform installers and attaches them to a GitHub Release named **Gold & Diamond Browser v0.1.0**. The release is published only after all three platform builds succeed.
+GitHub Actions then builds all platform installers and attaches them to a GitHub Release named **Gold & Diamond Browser v0.5.0**. The release is published only after all three platform builds succeed.
 
 Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gatekeeper may show warnings until signing identities are configured.
 
