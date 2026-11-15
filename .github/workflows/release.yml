@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    name: Build \${{ matrix.name }}
+    name: Build ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +27,7 @@ jobs:
             os: ubuntu-22.04
           - name: macOS
             os: macos-14
-    runs-on: \${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out browser
@@ -128,7 +128,7 @@ jobs:
       - name: Upload platform installers
         uses: actions/upload-artifact@v4
         with:
-          name: installers-\${{ runner.os }}
+          name: installers-${{ runner.os }}
           path: release-files/*
           if-no-files-found: error
           retention-days: 7
@@ -148,8 +148,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: \${{ github.ref_name }}
-          name: Gold & Diamond Browser \${{ github.ref_name }}
+          tag_name: ${{ inputs.version != '' && format('v{0}', inputs.version) || github.ref_name }}
+          name: Gold & Diamond Browser ${{ inputs.version != '' && format('v{0}', inputs.version) || github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true
