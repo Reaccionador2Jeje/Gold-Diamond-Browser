@@ -98,6 +98,7 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Capture", "Save a screenshot of this page", self.save_screenshot)
         self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
         self._action(toolbar, "Ask AI", "Ask Gold & Diamond AI", self.show_ai_assistant)
+        self._action(toolbar, "Settings", "Configure Gold & Diamond Browser", self.show_settings)
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
 
         self.progress = QProgressBar()
