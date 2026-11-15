@@ -42,7 +42,7 @@ def build_dashboard(theme_name: str = "graphite", bookmarks: list[dict] | None =
         bookmark_cards = '<div class="empty">Your saved pages will appear here.</div>'
     template = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<meta name="color-scheme" content="dark light"><title>Gold & Diamond — New tab</title>
+<meta name="color-scheme" content="dark light"><title>Gold & Diamond — gold-diamond.local</title>
 <style>
 :root{--gold:__GOLD__;--cyan:__CYAN__;--ink:__INK__;--muted:__MUTED__;--bg:__BG__;--glow:__GLOW__;--glass:__GLASS__;--line:__LINE__;--tile-a:__TILE_A__;--tile-b:__TILE_B__}
 *{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,'Segoe UI',Arial,sans-serif;background:radial-gradient(ellipse at 16% 8%,var(--glow) 0%,transparent 36%),radial-gradient(ellipse at 88% 78%,#173b42 0%,transparent 34%),linear-gradient(135deg,var(--bg),#101b2b 55%,var(--bg));}}
@@ -69,7 +69,7 @@ h1{{font-size:clamp(34px,6vw,58px);letter-spacing:-2px;margin:13px 0 8px}}h1 em{
 <form class="search" id="search" data-search-url="__SEARCH_ENGINE__"><input id="query" autocomplete="off" autofocus placeholder="Search the web or enter a website…" aria-label="Search the web"><button type="submit">Explore ↗</button></form></section>
 <div class="section-head"><h2>QUICK LAUNCH</h2><span class="hint">Your shortcuts to the web</span></div><section class="grid">__TILES__</section>
 <div class="section-head"><h2>YOUR SAVED SPACE</h2><span class="hint">Bookmarks from your library</span></div><section class="saved-grid">__BOOKMARKS__</section>
-<footer class="footer"><span>POWERED BY <strong>MEMINGO</strong> · CHROMIUM ENGINE</span><span>MADE TO EXPLORE · GOLD & DIAMOND</span></footer>
+<footer class="footer"><span>POWERED BY <strong>MEMINGO</strong> · CHROMIUM ENGINE</span><span>MADE BY ATDEV DEV · GOLD & DIAMOND</span></footer>
 </main><script>
 const tick=()=>{{const d=new Date();document.getElementById('time').textContent=d.toLocaleTimeString([],{{hour:'2-digit',minute:'2-digit'}});document.getElementById('date').textContent=d.toLocaleDateString([],{{weekday:'long',month:'long',day:'numeric'}})}};
 tick();setInterval(tick,1000);
