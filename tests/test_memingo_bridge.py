@@ -7,6 +7,7 @@ from unittest.mock import patch
 from browser.memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
     load_session, record_history, remove_bookmark, resolve_url, save_setting, save_session,
+    list_workspaces, save_workspace,
 )
 
 
@@ -51,6 +52,12 @@ class MemingoBrowserTests(unittest.TestCase):
         history = record_history("https://example.org", "Example Org")
         self.assertTrue(any(item["url"] == "https://example.org" for item in history))
         clear_history()
+
+    def test_workspaces_are_saved_and_restored_by_memingo(self):
+        save_workspace("Research", ["https://example.com", "not-a-url"])
+        workspaces = list_workspaces()
+        self.assertEqual(workspaces[-1]["name"], "Research")
+        self.assertEqual(workspaces[-1]["tabs"], ["https://example.com"])
 
     def test_explicit_url_is_preserved(self):
         self.assertEqual(resolve_url("https://example.com"), "https://example.com")
