@@ -257,7 +257,9 @@ class GoldDiamondWindow(QMainWindow):
             private_profile = QWebEngineProfile(self)
             private_page = QWebEnginePage(private_profile, view)
             view.setPage(private_page)
+            view.setProperty("gdb_profile_id", None)
         else:
+            view.setProperty("gdb_profile_id", self.active_profile_id)
             view.setPage(QWebEnginePage(self._persistent_profile(self.active_profile_id), view))
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
@@ -800,7 +802,7 @@ class GoldDiamondWindow(QMainWindow):
         urls = []
         if self.settings.get("restore_session", True):
             try:
-                urls = load_session()
+                urls = load_session(self.active_profile_id)
             except Exception as exc:
                 self.status.showMessage(f"Session restore unavailable: {exc}", 5000)
         valid = [url for url in urls if isinstance(url, str) and url.startswith(("https://", "http://"))]
@@ -811,16 +813,20 @@ class GoldDiamondWindow(QMainWindow):
             self.new_tab(self.settings.get("startup_page") or self.config.get("home_url"))
 
     def persist_session(self):
-        urls = []
+        sessions: dict[str, list[str]] = {}
         for index in range(self.tabs.count()):
             view = self.tabs.widget(index)
             if not isinstance(view, QWebEngineView) or view.property("private_mode"):
                 continue
+            profile_id = view.property("gdb_profile_id") or "default"
             url = view.url().toString()
             if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:
-                urls.append(url)
+                sessions.setdefault(profile_id, []).append(url)
         try:
-            save_session(urls)
+            for profile_id, urls in sessions.items():
+                save_session(urls, profile_id)
+            if self.active_profile_id not in sessions:
+                save_session([], self.active_profile_id)
         except Exception as exc:
             self.status.showMessage(f"Could not save session: {exc}", 5000)
 
