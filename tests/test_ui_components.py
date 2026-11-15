@@ -23,6 +23,8 @@ class BrowserUiTests(unittest.TestCase):
         self.assertIn('id="search"', page)
         self.assertIn("QUICK LAUNCH", page)
         self.assertIn("Internet Archive", page)
+        self.assertIn("gold-diamond.local", page)
+        self.assertIn("MADE BY ATDEV DEV", page)
 
     def test_dashboard_uses_selected_search_engine(self):
         page = build_dashboard(search_engine="https://duckduckgo.com/?q=")
