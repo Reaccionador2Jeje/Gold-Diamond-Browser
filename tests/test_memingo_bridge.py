@@ -49,15 +49,27 @@ class MemingoBrowserTests(unittest.TestCase):
         self.assertEqual(settings["theme"], "midnight")
 
     def test_bookmarks_are_managed_by_memingo(self):
-        add_bookmark("https://example.com", "Example")
-        self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks()))
-        remove_bookmark("https://example.com")
-        self.assertFalse(any(item["url"] == "https://example.com" for item in list_bookmarks()))
+        add_bookmark("https://example.com", "Example", "default")
+        self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks("default")))
+        remove_bookmark("https://example.com", "default")
+        self.assertFalse(any(item["url"] == "https://example.com" for item in list_bookmarks("default")))
+
+    def test_bookmarks_are_isolated_between_profiles(self):
+        add_bookmark("https://personal.example", "Personal", "default")
+        add_bookmark("https://work.example", "Work", "work")
+        self.assertEqual([item["url"] for item in list_bookmarks("default")], ["https://personal.example"])
+        self.assertEqual([item["url"] for item in list_bookmarks("work")], ["https://work.example"])
 
     def test_history_records_visits(self):
-        history = record_history("https://example.org", "Example Org")
+        history = record_history("https://example.org", "Example Org", "default")
         self.assertTrue(any(item["url"] == "https://example.org" for item in history))
-        clear_history()
+        clear_history("default")
+
+    def test_history_isolated_between_profiles(self):
+        record_history("https://personal.example", "Personal", "default")
+        record_history("https://work.example", "Work", "work")
+        self.assertEqual([item["url"] for item in list_history("default")], ["https://personal.example"])
+        self.assertEqual([item["url"] for item in list_history("work")], ["https://work.example"])
 
     def test_workspaces_are_saved_and_restored_by_memingo(self):
         save_workspace("Research", ["https://example.com", "not-a-url"])
