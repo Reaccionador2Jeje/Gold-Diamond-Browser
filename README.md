@@ -18,6 +18,8 @@ Memingo is the primary application and policy language. New browser behavior sho
 - `main.mgo` defines application identity, theme and window configuration.
 - `ecosystem/navigation.mgo` owns address interpretation and search routing.
 - `ecosystem/settings.mgo` owns default settings and persistent settings updates.
+- `ecosystem/bookmarks.mgo` owns bookmark storage and updates.
+- `ecosystem/history.mgo` owns visit recording and history storage.
 - `browser/memingo_bridge.py` is a narrow execution and serialization adapter.
 - `browser/window.py` is the native Qt host: widgets, Chromium WebEngine events and platform integration.
 - `run.py` starts the desktop application.
@@ -102,6 +104,8 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 | Alt+Left | Back |
 | Alt+Right | Forward |
 | Alt+Home | Home |
+| Ctrl+D | Add bookmark |
+| Ctrl+Shift+H | Set current page as startup page |
 
 ## Roadmap
 
