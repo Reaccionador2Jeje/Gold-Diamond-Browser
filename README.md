@@ -8,6 +8,7 @@
 - Browser configuration and address/search resolution are authored in Memingo.
 - Back, forward, reload and home controls.
 - Multiple tabs, close/reorder tabs and keyboard shortcuts.
+- Memingo-managed bookmarks and browsing history, with toolbar menus.
 - Dark graphite UI with gold and diamond accents.
 - Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
 
@@ -105,6 +106,8 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 | Alt+Right | Forward |
 | Alt+Home | Home |
 | Ctrl+D | Add bookmark |
+| Ctrl+Shift+B | Show bookmarks |
+| Ctrl+H | Show browsing history |
 | Ctrl+Shift+H | Set current page as startup page |
 
 ## Roadmap
