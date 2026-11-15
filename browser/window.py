@@ -30,6 +30,7 @@ class GoldDiamondWindow(QMainWindow):
         self.config = config
         self.theme = config["theme"]
         self.settings = load_settings()
+        self.theme_name = self.settings.get("theme", "graphite")
         self._download_connections = set()
         self.download_items = []
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
@@ -55,7 +56,7 @@ class GoldDiamondWindow(QMainWindow):
         self._build_status()
         self._build_menus()
         self._register_shortcuts()
-        self.new_tab()
+        self.restore_saved_session()
 
     def _stylesheet(self) -> str:
         palettes = {
@@ -502,6 +503,10 @@ class GoldDiamondWindow(QMainWindow):
 
     def show_settings(self):
         menu = QMenu("Quick settings", self)
+        appearance = menu.addMenu("Appearance")
+        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
+            appearance.addAction(label, lambda selected=theme_name: self.change_theme(selected))
+        menu.addSeparator()
         menu.addAction("Set current page as startup page", self.set_startup_page)
         menu.addAction("Google search", lambda: self.change_search("https://www.google.com/search?q="))
         menu.addAction("DuckDuckGo search", lambda: self.change_search("https://duckduckgo.com/?q="))
