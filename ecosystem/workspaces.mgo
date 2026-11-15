@@ -1,0 +1,23 @@
+# Gold & Diamond Browser — named browsing workspaces
+# Memingo owns workspace persistence and retrieval.
+
+vibe request = json_parse(env("GDB_REQUEST", "{}"))
+vibe storage_path = "data/workspaces.json"
+vibe workspaces = []
+
+when file_exists(storage_path) {
+    workspaces = json_parse(read_file(storage_path))
+}
+
+when request.action == "save" {
+    when request.name != "" {
+        push(workspaces, {
+            name: request.name,
+            tabs: request.tabs,
+            saved_at: now()
+        })
+        write_file(storage_path, json_stringify(workspaces))
+    }
+}
+
+spill json_stringify({workspaces: workspaces})
