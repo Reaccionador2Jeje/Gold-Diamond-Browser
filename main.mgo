@@ -1,0 +1,26 @@
+# Gold & Diamond Browser — application brain
+# Memingo owns browser settings and navigation decisions.
+
+vibe app = {
+    name: "Gold & Diamond Browser",
+    version: "0.1.0",
+    search_engine: "https://www.google.com/search?q=",
+    home_url: "https://www.google.com",
+    theme: {
+        background: "#10131b",
+        surface: "#191e2a",
+        surface_alt: "#222a39",
+        gold: "#d9ad55",
+        diamond: "#75d8e8",
+        text: "#f3f5f8",
+        muted: "#9ba8ba"
+    },
+    window: {
+        width: 1280,
+        height: 820,
+        minimum_width: 860,
+        minimum_height: 560
+    }
+}
+
+spill json_stringify(app)
