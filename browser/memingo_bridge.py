@@ -154,7 +154,8 @@ def clear_history(profile_id: str = "default") -> list[dict[str, Any]]:
 
 def load_session(profile_id: str = "default") -> list[str]:
     return _run_data_module(
-        "sessions.mgo", {"action": "get", "profile_id": profile_id}
+        "sessions.mgo", {"action": "get"},
+        storage_path=_profile_storage_path("session", profile_id),
     ).get("tabs", [])
 
 
@@ -164,8 +165,8 @@ def save_session(urls: list[str], profile_id: str = "default") -> list[str]:
         if isinstance(url, str) and url.startswith(("https://", "http://"))
     ]
     return _run_data_module(
-        "sessions.mgo",
-        {"action": "save", "tabs": clean_urls, "profile_id": profile_id},
+        "sessions.mgo", {"action": "save", "tabs": clean_urls},
+        storage_path=_profile_storage_path("session", profile_id),
     ).get("tabs", [])
 
 
