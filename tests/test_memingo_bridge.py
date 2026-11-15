@@ -51,7 +51,10 @@ class MemingoBrowserTests(unittest.TestCase):
 
     def test_bookmarks_are_managed_by_memingo(self):
         add_bookmark("https://example.com", "Example", "default")
-        self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks("default")))
+        add_bookmark("https://example.com", "Updated Example", "default")
+        matching = [item for item in list_bookmarks("default") if item["url"] == "https://example.com"]
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(matching[0]["title"], "Updated Example")
         remove_bookmark("https://example.com", "default")
         self.assertFalse(any(item["url"] == "https://example.com" for item in list_bookmarks("default")))
 
