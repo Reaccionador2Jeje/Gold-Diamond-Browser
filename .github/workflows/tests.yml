@@ -1,0 +1,25 @@
+name: Browser tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out browser
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Memingo
+        run: |
+          git clone --depth 1 https://github.com/Reaccionador2Jeje/Memingo.git ../Memingo
+          python -m pip install --upgrade pip
+          python -m pip install -e ../Memingo
+      - name: Run browser and Memingo integration tests
+        run: python -m unittest discover -s tests -v
