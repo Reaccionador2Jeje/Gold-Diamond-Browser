@@ -7,7 +7,8 @@ vibe settings = {
     startup_page: "https://www.google.com",
     search_engine: "https://www.google.com/search?q=",
     restore_session: based,
-    ask_before_closing: cringe
+    ask_before_closing: cringe,
+    theme: "graphite"
 }
 
 when file_exists(settings_path) {
@@ -15,7 +16,7 @@ when file_exists(settings_path) {
 }
 
 when request.action == "set" {
-    when request.key == "startup_page" || request.key == "search_engine" || request.key == "restore_session" || request.key == "ask_before_closing" {
+    when request.key == "startup_page" || request.key == "search_engine" || request.key == "restore_session" || request.key == "ask_before_closing" || request.key == "theme" {
         set_value(settings, request.key, request.value)
         write_file(settings_path, json_stringify(settings))
     }
