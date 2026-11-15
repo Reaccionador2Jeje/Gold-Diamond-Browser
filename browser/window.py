@@ -206,7 +206,10 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Close tabs to the right", self.close_tabs_to_right)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
-        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
+        for theme_name, label in (
+            ("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"),
+            ("pearl", "Pearl Light"), ("forest", "Emerald Forest"),
+        ):
             self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
 
         help_menu = bar.addMenu("Help")
