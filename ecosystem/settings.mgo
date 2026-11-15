@@ -4,11 +4,13 @@
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
 vibe settings_path = "data/settings.json"
 vibe settings = {
-    startup_page: "https://www.google.com",
+    startup_page: "https://gold-diamond.local/",
     search_engine: "https://www.google.com/search?q=",
     restore_session: based,
     ask_before_closing: cringe,
-    theme: "graphite"
+    theme: "graphite",
+    ai_base_url: "https://api.openai.com/v1",
+    ai_model: "gpt-4o-mini"
 }
 
 when file_exists(settings_path) {
@@ -16,7 +18,7 @@ when file_exists(settings_path) {
 }
 
 when request.action == "set" {
-    when request.key == "startup_page" || request.key == "search_engine" || request.key == "restore_session" || request.key == "ask_before_closing" || request.key == "theme" {
+    when request.key == "startup_page" || request.key == "search_engine" || request.key == "restore_session" || request.key == "ask_before_closing" || request.key == "theme" || request.key == "ai_base_url" || request.key == "ai_model" {
         set_value(settings, request.key, request.value)
         write_file(settings_path, json_stringify(settings))
     }
