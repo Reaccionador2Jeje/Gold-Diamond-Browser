@@ -2,7 +2,7 @@
 
 **Gold & Diamond Browser** is a cross-platform desktop browser built with Memingo and Qt WebEngine (Chromium).
 
-## Version 0.5 development — AI and desktop experience
+## Version 0.5.0 — Browser Ecosystem
 
 - Real websites rendered with Qt WebEngine.
 - Browser configuration and address/search resolution are authored in Memingo.
@@ -29,7 +29,7 @@
 - Theme preferences and saved sessions are persisted by Memingo.
 - Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
 - Dark graphite UI with gold and diamond accents.
-- Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
+- Browser profiles with separate persistent Chromium storage; new tabs use the active profile while existing tabs remain in their original profile.\n- Built-in Extension Center for Reader Mode, Quick Translate and Page Capture; these are native browser tools, not Chrome Web Store extensions.\n- Privacy Center to clear the active profile cache, cookies and locally recorded browsing history. This does not provide anonymity or erase website/network records.\n- Automated native installers for Windows, Linux and macOS are built by GitHub Actions after all platform builds succeed.
 
 ## Architecture — Memingo-First
 
