@@ -121,17 +121,20 @@ def clear_history() -> list[dict[str, Any]]:
     return _run_data_module("history.mgo", {"action": "clear"}).get("history", [])
 
 
-def load_session() -> list[str]:
-    return _run_data_module("sessions.mgo", {"action": "get"}).get("tabs", [])
+def load_session(profile_id: str = "default") -> list[str]:
+    return _run_data_module(
+        "sessions.mgo", {"action": "get", "profile_id": profile_id}
+    ).get("tabs", [])
 
 
-def save_session(urls: list[str]) -> list[str]:
+def save_session(urls: list[str], profile_id: str = "default") -> list[str]:
     clean_urls = [
         url for url in urls
         if isinstance(url, str) and url.startswith(("https://", "http://"))
     ]
     return _run_data_module(
-        "sessions.mgo", {"action": "save", "tabs": clean_urls}
+        "sessions.mgo",
+        {"action": "save", "tabs": clean_urls, "profile_id": profile_id},
     ).get("tabs", [])
 
 
