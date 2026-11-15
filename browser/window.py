@@ -6,11 +6,14 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
-    QLineEdit, QMainWindow, QTabWidget, QToolBar, QStatusBar,
+    QLineEdit, QMainWindow, QTabWidget, QToolBar, QStatusBar, QMenu,
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from .memingo_bridge import add_bookmark, load_settings, record_history, resolve_url, save_setting
+from .memingo_bridge import (
+    add_bookmark, list_bookmarks, list_history, load_settings,
+    record_history, resolve_url, save_setting,
+)
 
 
 class GoldDiamondWindow(QMainWindow):
@@ -56,6 +59,8 @@ class GoldDiamondWindow(QMainWindow):
         self.add_action(toolbar, "⌂", "Home", self.go_home, "Alt+Home")
         self.add_action(toolbar, "☆", "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self.add_action(toolbar, "★", "Add bookmark", self.add_current_bookmark, "Ctrl+D")
+        self.add_action(toolbar, "Bookmarks", "Show bookmarks", self.show_bookmarks, "Ctrl+Shift+B")
+        self.add_action(toolbar, "History", "Show browsing history", self.show_history, "Ctrl+H")
 
         self.address = QLineEdit()
         self.address.setPlaceholderText("Search or enter a web address")
@@ -99,6 +104,39 @@ class GoldDiamondWindow(QMainWindow):
                 view.setUrl(QUrl(url))
         except Exception as exc:
             self.status.showMessage(f"Navigation error: {exc}", 6000)
+
+    def _show_saved_pages(self, entries: list[dict], empty_label: str):
+        menu = QMenu(self)
+        if not entries:
+            empty_action = menu.addAction(empty_label)
+            empty_action.setEnabled(False)
+        for entry in reversed(entries):
+            title = entry.get("title") or entry.get("url") or "Untitled"
+            url = entry.get("url", "")
+            if url:
+                action = menu.addAction(title[:60])
+                action.setToolTip(url)
+                action.triggered.connect(
+                    lambda checked=False, target=url: self.navigate_to(target)
+                )
+        menu.exec(self.mapToGlobal(self.rect().center()))
+
+    def show_bookmarks(self):
+        try:
+            self._show_saved_pages(list_bookmarks(), "No bookmarks yet")
+        except Exception as exc:
+            self.status.showMessage(f"Bookmarks error: {exc}", 6000)
+
+    def show_history(self):
+        try:
+            self._show_saved_pages(list_history(), "No browsing history yet")
+        except Exception as exc:
+            self.status.showMessage(f"History error: {exc}", 6000)
+
+    def navigate_to(self, url: str):
+        view = self.current_view()
+        if view:
+            view.setUrl(QUrl(url))
 
     def page_loaded(self, ok: bool, browser: QWebEngineView):
         self.status.showMessage("Ready" if ok else "Page load failed", 4000)
