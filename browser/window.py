@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from .memingo_bridge import load_settings, resolve_url, save_setting
+from .memingo_bridge import add_bookmark, load_settings, record_history, resolve_url, save_setting
 
 
 class GoldDiamondWindow(QMainWindow):
@@ -55,6 +55,7 @@ class GoldDiamondWindow(QMainWindow):
         self.add_action(toolbar, "↻", "Reload", self.reload_page, "Ctrl+R")
         self.add_action(toolbar, "⌂", "Home", self.go_home, "Alt+Home")
         self.add_action(toolbar, "☆", "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
+        self.add_action(toolbar, "★", "Add bookmark", self.add_current_bookmark, "Ctrl+D")
 
         self.address = QLineEdit()
         self.address.setPlaceholderText("Search or enter a web address")
@@ -86,7 +87,7 @@ class GoldDiamondWindow(QMainWindow):
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
         view.titleChanged.connect(lambda title, browser=view: self.update_title(title, browser))
         view.loadStarted.connect(lambda: self.status.showMessage("Loading…"))
-        view.loadFinished.connect(lambda ok: self.status.showMessage("Ready" if ok else "Page load failed", 4000))
+        view.loadFinished.connect(lambda ok, browser=view: self.page_loaded(ok, browser))
         view.setUrl(QUrl(url or self.config.get("home_url", "https://www.google.com")))
         self.address.setFocus()
 
@@ -98,6 +99,29 @@ class GoldDiamondWindow(QMainWindow):
                 view.setUrl(QUrl(url))
         except Exception as exc:
             self.status.showMessage(f"Navigation error: {exc}", 6000)
+
+    def page_loaded(self, ok: bool, browser: QWebEngineView):
+        self.status.showMessage("Ready" if ok else "Page load failed", 4000)
+        url = browser.url().toString()
+        if ok and url.startswith(("https://", "http://")):
+            try:
+                record_history(url, browser.title() or url)
+            except Exception as exc:
+                self.status.showMessage(f"History error: {exc}", 5000)
+
+    def add_current_bookmark(self):
+        view = self.current_view()
+        if not view:
+            return
+        url = view.url().toString()
+        if not url.startswith(("https://", "http://")):
+            self.status.showMessage("Only web pages can be bookmarked", 4000)
+            return
+        try:
+            add_bookmark(url, view.title() or url)
+            self.status.showMessage("Bookmark saved", 4000)
+        except Exception as exc:
+            self.status.showMessage(f"Bookmark error: {exc}", 6000)
 
     def update_address(self, qurl: QUrl, browser: QWebEngineView):
         if browser is self.current_view():
