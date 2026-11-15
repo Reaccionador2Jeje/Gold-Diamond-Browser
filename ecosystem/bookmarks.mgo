@@ -20,6 +20,14 @@ when request.action == "add" {
     }
 }
 
+when request.action == "remove" {
+    ritual keep_bookmark(item) {
+        drop item.url != request.url
+    }
+    bookmarks = filter(bookmarks, keep_bookmark)
+    write_file(storage_path, json_stringify(bookmarks))
+}
+
 when request.action == "clear" {
     bookmarks = []
     write_file(storage_path, json_stringify(bookmarks))
