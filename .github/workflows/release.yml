@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -43,15 +42,7 @@ jobs:
           python -m pip install -r requirements.txt pyinstaller
 
       - name: Build application bundle
-        run: >
-          pyinstaller --noconfirm --clean --windowed --onedir
-          --name GoldDiamondBrowser
-          --collect-all PySide6
-          --collect-all shiboken6
-          --collect-all memingo
-          --add-data "main.mgo:."
-          --add-data "src:src"
-          run.py
+        run: python packaging/build.py
 
       - name: Build Windows installer
         if: runner.os == 'Windows'
@@ -67,7 +58,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev rubygems build-essential
+          sudo apt-get install -y ruby ruby-dev build-essential
           sudo gem install --no-document fpm
           mkdir -p package-root/opt/gold-diamond-browser
           mkdir -p package-root/usr/bin package-root/usr/share/applications
