@@ -40,11 +40,11 @@ def build_dashboard(theme_name: str = "graphite", bookmarks: list[dict] | None =
     )
     if not bookmark_cards:
         bookmark_cards = '<div class="empty">Your saved pages will appear here.</div>'
-    return f"""<!doctype html>
+    template = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta name="color-scheme" content="dark light"><title>Gold & Diamond — New tab</title>
 <style>
-:root{{--gold:{gold};--cyan:{cyan};--ink:{ink};--muted:{muted};--bg:{background};--glow:{glow};--glass:{glass};--line:{line};--tile-a:{tile_a};--tile-b:{tile_b}}}
+:root{--gold:__GOLD__;--cyan:__CYAN__;--ink:__INK__;--muted:__MUTED__;--bg:__BG__;--glow:__GLOW__;--glass:__GLASS__;--line:__LINE__;--tile-a:__TILE_A__;--tile-b:__TILE_B__}
 *{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,'Segoe UI',Arial,sans-serif;background:radial-gradient(ellipse at 16% 8%,var(--glow) 0%,transparent 36%),radial-gradient(ellipse at 88% 78%,#173b42 0%,transparent 34%),linear-gradient(135deg,var(--bg),#101b2b 55%,var(--bg));}}
 body:before{{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:radial-gradient(#b8d8e8 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,black,transparent 85%)}}
 main{{position:relative;width:min(1080px,92%);margin:auto;padding:54px 0 34px}}
@@ -66,12 +66,22 @@ h1{{font-size:clamp(34px,6vw,58px);letter-spacing:-2px;margin:13px 0 8px}}h1 em{
 <body><main>
 <header class="top"><div class="brand"><div class="logo">◆</div><div><b>GOLD & DIAMOND</b><small>YOUR PERSONAL WEB SPACE</small></div></div><div class="clock"><div id="time">--:--</div><div id="date">Ready to explore</div></div></header>
 <section class="hero"><div class="eyebrow">A brighter way to explore</div><h1>Find your next <em>discovery.</em></h1><div class="sub">One browser. Your world of ideas, tools and knowledge.</div>
-<form class="search" id="search" data-search-url="{escape(search_engine, quote=True)}"><input id="query" autocomplete="off" autofocus placeholder="Search the web or enter a website…" aria-label="Search the web"><button type="submit">Explore ↗</button></form></section>
-<div class="section-head"><h2>QUICK LAUNCH</h2><span class="hint">Your shortcuts to the web</span></div><section class="grid">{tiles}</section>
-<div class="section-head"><h2>YOUR SAVED SPACE</h2><span class="hint">Bookmarks from your library</span></div><section class="saved-grid">{bookmark_cards}</section>
+<form class="search" id="search" data-search-url="__SEARCH_ENGINE__"><input id="query" autocomplete="off" autofocus placeholder="Search the web or enter a website…" aria-label="Search the web"><button type="submit">Explore ↗</button></form></section>
+<div class="section-head"><h2>QUICK LAUNCH</h2><span class="hint">Your shortcuts to the web</span></div><section class="grid">__TILES__</section>
+<div class="section-head"><h2>YOUR SAVED SPACE</h2><span class="hint">Bookmarks from your library</span></div><section class="saved-grid">__BOOKMARKS__</section>
 <footer class="footer"><span>POWERED BY <strong>MEMINGO</strong> · CHROMIUM ENGINE</span><span>MADE TO EXPLORE · GOLD & DIAMOND</span></footer>
 </main><script>
 const tick=()=>{{const d=new Date();document.getElementById('time').textContent=d.toLocaleTimeString([],{{hour:'2-digit',minute:'2-digit'}});document.getElementById('date').textContent=d.toLocaleDateString([],{{weekday:'long',month:'long',day:'numeric'}})}};
 tick();setInterval(tick,1000);
 document.getElementById('search').addEventListener('submit',e=>{{e.preventDefault();const q=document.getElementById('query').value.trim();if(q)location.href=document.getElementById('search').dataset.searchUrl+encodeURIComponent(q)}});
 </script></body></html>"""
+    replacements = {
+        "__GOLD__": gold, "__CYAN__": cyan, "__INK__": ink, "__MUTED__": muted,
+        "__BG__": background, "__GLOW__": glow, "__GLASS__": glass, "__LINE__": line,
+        "__TILE_A__": tile_a, "__TILE_B__": tile_b,
+        "__SEARCH_ENGINE__": escape(search_engine, quote=True),
+        "__TILES__": tiles, "__BOOKMARKS__": bookmark_cards,
+    }
+    for marker, value in replacements.items():
+        template = template.replace(marker, value)
+    return template
