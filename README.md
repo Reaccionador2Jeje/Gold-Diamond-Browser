@@ -133,7 +133,7 @@ To publish version 0.5.0, create and push the tag:
 
 \`\`\`bash
 git tag v0.5.0
-git push origin v0.1.0
+git push origin v0.5.0
 \`\`\`
 
 GitHub Actions then builds all platform installers and attaches them to a GitHub Release named **Gold & Diamond Browser v0.5.0**. The release is published only after all three platform builds succeed.
@@ -171,6 +171,6 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 - 0.2.0 — Premium interface, dashboard, private tabs, downloads, PDF export and expanded Memingo-first features.
 - 0.3.0 — theme system, session restore and Memingo-managed browser preferences.
 - 0.4 development — modular UI, dashboard refresh, tab management and page tools.
-- 0.5 development — AI assistant, full settings, AtDev Dev credits, Apache license attribution, branded home page and desktop icon.
-- Future — extension framework, profiles, sync and advanced privacy controls.
+- 0.5.0 — AI assistant, full settings, AtDev Dev credits, Apache license attribution, branded home page, desktop icon, profiles, built-in extension center and privacy controls.
+- Future — third-party extension framework, optional sync and a secure password manager backed by the operating system key store.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
