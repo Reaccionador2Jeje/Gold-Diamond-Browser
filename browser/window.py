@@ -188,6 +188,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Copy current page address", self.copy_current_url, "Ctrl+Shift+C")
         self._menu_action(tools_menu, "Save page HTML…", self.save_page_html)
         self._menu_action(tools_menu, "Copy page text", self.copy_page_text)
+        self._menu_action(tools_menu, "Summarize this page with AI", self.summarize_page_with_ai)
         self._menu_action(tools_menu, "Close tabs to the right", self.close_tabs_to_right)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
@@ -569,6 +570,21 @@ class GoldDiamondWindow(QMainWindow):
     def show_ai_assistant(self):
         dialog = AIAssistantDialog(self.settings, self)
         dialog.exec()
+
+    def summarize_page_with_ai(self):
+        view = self.current_view()
+        if not view:
+            return
+        self.status.showMessage("Reading page content for Gold & Diamond AI…", 3000)
+
+        def open_context(text):
+            if not text or not text.strip():
+                self.status.showMessage("No readable page text was found", 3500)
+                return
+            dialog = AIAssistantDialog(self.settings, self, page_context=text[:20000])
+            dialog.exec()
+
+        view.page().runJavaScript("document.body ? document.body.innerText : ''", open_context)
 
     def show_credits(self):
         QMessageBox.about(
