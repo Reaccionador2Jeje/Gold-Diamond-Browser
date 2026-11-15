@@ -1,0 +1,1 @@
+"""Gold & Diamond Browser package."""
