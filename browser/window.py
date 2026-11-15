@@ -58,33 +58,54 @@ class GoldDiamondWindow(QMainWindow):
         self.new_tab()
 
     def _stylesheet(self) -> str:
+        palettes = {
+            "graphite": {
+                "bg": "#0b0f17", "bar": "#111827", "field": "#0d1420",
+                "panel": "#172235", "tab": "#202b3b", "hover": "#25364a",
+                "text": "#edf2f8", "muted": "#91a0b4", "border": "#34445a",
+                "gold": "#e5b85c", "blue": "#75d8e8",
+            },
+            "midnight": {
+                "bg": "#080d20", "bar": "#111a36", "field": "#0c1530",
+                "panel": "#17264a", "tab": "#202f57", "hover": "#2b4172",
+                "text": "#eef2ff", "muted": "#a1b1d8", "border": "#354b7c",
+                "gold": "#9fbcff", "blue": "#72e4ff",
+            },
+            "pearl": {
+                "bg": "#edf1f7", "bar": "#dce4ef", "field": "#ffffff",
+                "panel": "#e4eaf3", "tab": "#f8faff", "hover": "#d5e0ef",
+                "text": "#182438", "muted": "#53647b", "border": "#b8c6d8",
+                "gold": "#a36c12", "blue": "#087f9b",
+            },
+        }
+        p = palettes.get(self.theme_name, palettes["graphite"])
         return f"""
-        QWidget {{ color: #edf2f8; font-family: 'Segoe UI', 'Inter', sans-serif; font-size: 10pt; }}
-        QMainWindow, QTabWidget::pane {{ background: #0b0f17; border: 0; }}
-        QToolBar {{ background: #111827; border: 0; spacing: 6px; padding: 8px 12px; }}
-        QToolButton {{ color: #dce5ef; background: #1a2535; border: 1px solid #29384b;
+        QWidget {{ color: {p["text"]}; font-family: 'Segoe UI', 'Inter', sans-serif; font-size: 10pt; }}
+        QMainWindow, QTabWidget::pane {{ background: {p["bg"]}; border: 0; }}
+        QToolBar {{ background: {p["bar"]}; border: 0; spacing: 6px; padding: 8px 12px; }}
+        QToolButton {{ color: {p["text"]}; background: {p["panel"]}; border: 1px solid {p["border"]};
             border-radius: 10px; padding: 8px 11px; }}
-        QToolButton:hover {{ background: #25364a; border-color: {ACCENT_GOLD}; color: #fff; }}
-        QLineEdit {{ background: #0d1420; color: #f4f7fb; border: 1px solid #34445a;
-            border-radius: 13px; padding: 11px 15px; selection-background-color: {ACCENT_BLUE}; }}
-        QLineEdit:focus {{ border: 1px solid {ACCENT_GOLD}; }}
-        QTabBar::tab {{ background: #111827; color: #91a0b4; padding: 11px 18px;
+        QToolButton:hover {{ background: {p["hover"]}; border-color: {p["gold"]}; }}
+        QLineEdit {{ background: {p["field"]}; color: {p["text"]}; border: 1px solid {p["border"]};
+            border-radius: 13px; padding: 11px 15px; selection-background-color: {p["blue"]}; }}
+        QLineEdit:focus {{ border: 1px solid {p["gold"]}; }}
+        QTabBar::tab {{ background: {p["bar"]}; color: {p["muted"]}; padding: 11px 18px;
             margin-right: 3px; border-top-left-radius: 10px; border-top-right-radius: 10px; }}
-        QTabBar::tab:selected {{ color: {ACCENT_GOLD}; background: #202b3b; border-bottom: 2px solid {ACCENT_GOLD}; }}
-        QTabBar::tab:hover {{ background: #1b293a; }}
-        QStatusBar {{ background: #111827; color: #aab8c9; border-top: 1px solid #263448; }}
-        QDockWidget {{ color: {ACCENT_GOLD}; background: #101827; border: 1px solid #263448; }}
-        QDockWidget::title {{ background: #172235; padding: 10px; }}
-        QListWidget {{ background: #101827; border: 0; outline: 0; padding: 6px; }}
+        QTabBar::tab:selected {{ color: {p["gold"]}; background: {p["tab"]}; border-bottom: 2px solid {p["gold"]}; }}
+        QTabBar::tab:hover {{ background: {p["hover"]}; }}
+        QStatusBar {{ background: {p["bar"]}; color: {p["muted"]}; border-top: 1px solid {p["border"]}; }}
+        QDockWidget {{ color: {p["gold"]}; background: {p["panel"]}; border: 1px solid {p["border"]}; }}
+        QDockWidget::title {{ background: {p["bar"]}; padding: 10px; }}
+        QListWidget {{ background: {p["panel"]}; border: 0; outline: 0; padding: 6px; }}
         QListWidget::item {{ padding: 10px; border-radius: 7px; }}
-        QListWidget::item:selected {{ background: #26364b; color: {ACCENT_GOLD}; }}
-        QPushButton {{ background: #202e41; color: #edf2f8; border: 1px solid #34465d;
+        QListWidget::item:selected {{ background: {p["hover"]}; color: {p["gold"]}; }}
+        QPushButton {{ background: {p["tab"]}; color: {p["text"]}; border: 1px solid {p["border"]};
             border-radius: 9px; padding: 8px 12px; }}
-        QPushButton:hover {{ border-color: {ACCENT_GOLD}; background: #293b52; }}
-        QProgressBar {{ background: #1c293a; border: 0; border-radius: 3px; height: 4px; }}
-        QProgressBar::chunk {{ background: {ACCENT_GOLD}; border-radius: 3px; }}
+        QPushButton:hover {{ border-color: {p["gold"]}; }}
+        QProgressBar {{ background: {p["panel"]}; border: 0; border-radius: 3px; height: 4px; }}
+        QProgressBar::chunk {{ background: {p["gold"]}; border-radius: 3px; }}
         """
-
+ 
     def _build_navigation(self):
         toolbar = QToolBar("Main navigation")
         toolbar.setMovable(False)
@@ -183,7 +204,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
-        self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        self._menu_action(tools_menu, "Browser settings", self.show_settings)\n        themes_menu = tools_menu.addMenu("Appearance")\n        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):\n            self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
 
         help_menu = bar.addMenu("Help")
         self._menu_action(help_menu, "About Gold & Diamond", self.show_about)
@@ -484,7 +505,7 @@ class GoldDiamondWindow(QMainWindow):
         menu.addAction("Bing search", lambda: self.change_search("https://www.bing.com/search?q="))
         menu.exec(self.mapToGlobal(self.rect().center()))
 
-    def change_search(self, engine: str):
+    def change_theme(self, theme_name: str):\n        if theme_name not in {"graphite", "midnight", "pearl"}:\n            return\n        try:\n            self.settings = save_setting("theme", theme_name)\n            self.theme_name = theme_name\n            self.setStyleSheet(self._stylesheet())\n            self.status.showMessage(f"Theme changed to {theme_name}", 4000)\n        except Exception as exc:\n            self.status.showMessage(f"Could not save theme: {exc}", 5000)\n\n    def restore_saved_session(self):\n        urls = []\n        if self.settings.get("restore_session", True):\n            try:\n                urls = load_session()\n            except Exception as exc:\n                self.status.showMessage(f"Session restore unavailable: {exc}", 5000)\n        valid = [url for url in urls if isinstance(url, str) and url.startswith(("https://", "http://"))]\n        if valid:\n            for url in valid:\n                self.new_tab(url)\n        else:\n            self.new_tab(self.settings.get("startup_page") or self.config.get("home_url"))\n\n    def persist_session(self):\n        urls = []\n        for index in range(self.tabs.count()):\n            view = self.tabs.widget(index)\n            if not isinstance(view, QWebEngineView) or view.property("private_mode"):\n                continue\n            url = view.url().toString()\n            if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:\n                urls.append(url)\n        try:\n            save_session(urls)\n        except Exception as exc:\n            self.status.showMessage(f"Could not save session: {exc}", 5000)\n\n    def change_search(self, engine: str):
         self.settings = save_setting("search_engine", engine)
         self.status.showMessage("Search engine preference saved", 4000)
 
@@ -545,3 +566,4 @@ class GoldDiamondWindow(QMainWindow):
         self.tabs.removeTab(index)
         if widget:
             widget.deleteLater()
+\n    def closeEvent(self, event):\n        self.persist_session()\n        event.accept()\n
