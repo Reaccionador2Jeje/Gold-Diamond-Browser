@@ -44,6 +44,7 @@ class GoldDiamondWindow(QMainWindow):
         self.download_items = []
         self.closed_tabs: list[dict[str, str]] = []
         self.active_profile_id = active_profile_id()
+        self._session_profiles_seen = {self.active_profile_id}
         self.browser_profiles = {}
         self.split_view: QWebEngineView | None = None
         self.split_panel: QWidget | None = None
@@ -249,7 +250,17 @@ class GoldDiamondWindow(QMainWindow):
         widget = self.tabs.currentWidget()
         return widget if isinstance(widget, QWebEngineView) else None
 
-    def new_tab(self, url: str | None = None, private: bool = False):
+    def current_profile_id(self) -> str:
+        view = self.current_view()
+        profile_id = view.property("gdb_profile_id") if view is not None else None
+        return str(profile_id) if profile_id else self.active_profile_id
+
+    def new_tab(
+        self,
+        url: str | None = None,
+        private: bool = False,
+        profile_id: str | None = None,
+    ):
         view = QWebEngineView()
         view.setProperty("private_mode", private)
         view.setProperty("internal_home", False)
@@ -259,8 +270,10 @@ class GoldDiamondWindow(QMainWindow):
             view.setPage(private_page)
             view.setProperty("gdb_profile_id", None)
         else:
-            view.setProperty("gdb_profile_id", self.active_profile_id)
-            view.setPage(QWebEnginePage(self._persistent_profile(self.active_profile_id), view))
+            profile_id = profile_id or self.active_profile_id
+            self._session_profiles_seen.add(profile_id)
+            view.setProperty("gdb_profile_id", profile_id)
+            view.setPage(QWebEnginePage(self._persistent_profile(profile_id), view))
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
@@ -293,9 +306,9 @@ class GoldDiamondWindow(QMainWindow):
         self.browser_profiles[profile_id] = profile
         return profile
 
-    def start_page_html(self) -> str:
+    def start_page_html(self, profile_id: str | None = None) -> str:
         try:
-            bookmarks = list_bookmarks(self.active_profile_id)
+            bookmarks = list_bookmarks(profile_id or self.current_profile_id())
         except Exception:
             bookmarks = []
         return build_dashboard(self.theme_name, bookmarks, self.settings.get('search_engine', 'https://www.google.com/search?q='))
@@ -377,8 +390,10 @@ class GoldDiamondWindow(QMainWindow):
             self.address.setText(view.url().toString())
         else:
             self.address.clear()
+        self.refresh_bookmark_bar()
 
     def _saved_menu(self, entries: list[dict], empty: str, title: str):
+        profile_id = self.current_profile_id()
         menu = QMenu(title, self)
         if not entries:
             disabled = menu.addAction(empty)
@@ -391,16 +406,19 @@ class GoldDiamondWindow(QMainWindow):
                 open_action = item_menu.addAction("Open")
                 open_action.triggered.connect(lambda checked=False, target=url: self.navigate_to(target))
                 remove_action = item_menu.addAction("Remove bookmark")
-                remove_action.triggered.connect(lambda checked=False, target=url: self.remove_saved_bookmark(target))
+                remove_action.triggered.connect(
+                    lambda checked=False, target=url, owner=profile_id:
+                        self.remove_saved_bookmark(target, owner)
+                )
         menu.addSeparator()
         menu.addAction("Open library sidebar", self.toggle_sidebar)
         menu.exec(self.mapToGlobal(self.rect().center()))
 
     def show_bookmarks(self):
-        self._saved_menu(list_bookmarks(self.active_profile_id), "No bookmarks saved yet", "Your bookmarks")
+        self._saved_menu(list_bookmarks(self.current_profile_id()), "No bookmarks saved yet", "Your bookmarks")
 
     def show_history(self):
-        self._saved_menu(list_history(self.active_profile_id), "No browsing history yet", "Recently visited")
+        self._saved_menu(list_history(self.current_profile_id()), "No browsing history yet", "Recently visited")
 
     def save_to_reading_list(self):
         view = self.current_view()
@@ -575,9 +593,9 @@ class GoldDiamondWindow(QMainWindow):
         except Exception as exc:
             self.status.showMessage(f"Split View navigation error: {exc}", 5000)
 
-    def remove_saved_bookmark(self, url: str):
+    def remove_saved_bookmark(self, url: str, profile_id: str | None = None):
         try:
-            remove_bookmark(url, self.active_profile_id)
+            remove_bookmark(url, profile_id or self.current_profile_id())
             self.refresh_bookmark_bar()
             self.status.showMessage("Bookmark removed", 3500)
         except Exception as exc:
@@ -590,7 +608,7 @@ class GoldDiamondWindow(QMainWindow):
         title = self.bookmark_toolbar.addAction("◆  FAVORITES")
         title.setEnabled(False)
         try:
-            items = list_bookmarks(self.active_profile_id)[-5:]
+            items = list_bookmarks(self.current_profile_id())[-5:]
         except Exception:
             items = []
         for item in items:
@@ -610,7 +628,7 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("Open a website before bookmarking it", 4000)
             return
         try:
-            add_bookmark(url, view.title() or url, self.active_profile_id)
+            add_bookmark(url, view.title() or url, self.current_profile_id())
             self.refresh_bookmark_bar()
             self.status.showMessage("★  Added to your library", 4000)
         except Exception as exc:
@@ -710,7 +728,7 @@ class GoldDiamondWindow(QMainWindow):
     def clear_browsing_history(self):
         answer = QMessageBox.question(self, "Clear history", "Delete all recorded browsing history?")
         if answer == QMessageBox.StandardButton.Yes:
-            clear_history(self.active_profile_id)
+            clear_history(self.current_profile_id())
             self.status.showMessage("Browsing history cleared", 4000)
 
     def show_ecosystem_manager(self):
@@ -723,10 +741,13 @@ class GoldDiamondWindow(QMainWindow):
             if dialog.new_profile_name:
                 profile = create_profile(dialog.new_profile_name)
                 self.active_profile_id = profile['id']
+                self._session_profiles_seen.add(self.active_profile_id)
                 self.status.showMessage('Profile created; new tabs use it', 4500)
             elif dialog.profile_to_activate:
                 set_active_profile(dialog.profile_to_activate)
                 self.active_profile_id = dialog.profile_to_activate
+                self._session_profiles_seen.add(self.active_profile_id)
+                self.refresh_bookmark_bar()
                 self.status.showMessage('Active profile changed; existing tabs keep their original profile', 5000)
             if result == 4:
                 self.clear_profile_data()
@@ -824,10 +845,8 @@ class GoldDiamondWindow(QMainWindow):
             if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:
                 sessions.setdefault(profile_id, []).append(url)
         try:
-            for profile_id, urls in sessions.items():
-                save_session(urls, profile_id)
-            if self.active_profile_id not in sessions:
-                save_session([], self.active_profile_id)
+            for profile_id in self._session_profiles_seen:
+                save_session(sessions.get(profile_id, []), profile_id)
         except Exception as exc:
             self.status.showMessage(f"Could not save session: {exc}", 5000)
 
@@ -861,7 +880,11 @@ class GoldDiamondWindow(QMainWindow):
             return
         url = view.url().toString()
         private = bool(view.property("private_mode"))
-        self.new_tab(url if url.startswith(("https://", "http://")) else None, private=private)
+        self.new_tab(
+            url if url.startswith(("https://", "http://")) else None,
+            private=private,
+            profile_id=view.property("gdb_profile_id") or self.active_profile_id,
+        )
 
     def toggle_pin_tab(self, index: int):
         view = self.tabs.widget(index)
