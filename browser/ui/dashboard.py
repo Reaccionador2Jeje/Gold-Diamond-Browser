@@ -31,12 +31,15 @@ def build_dashboard(theme_name: str = "graphite", bookmarks: list[dict] | None =
         f'<b>{escape(name)}</b><small>{escape(description)}</small></a>'
         for name, url, glyph, description, _category in DEFAULT_TILES
     )
-    saved = bookmarks or []
+    saved = bookmarks if isinstance(bookmarks, list) else []
     bookmark_cards = "".join(
-        f'<a class="saved" href="{escape(item.get("url", ""), quote=True)}">'
-        f'<span>★</span>{escape((item.get("title") or item.get("url", "Saved page"))[:32])}</a>'
+        f'<a class="saved" href="{escape(url, quote=True)}">'
+        f'<span>★</span>{escape(title[:32])}</a>'
         for item in saved[-6:]
-        if item.get("url", "").startswith(("https://", "http://"))
+        if isinstance(item, dict)
+        for url in [item.get("url", "")]
+        if isinstance(url, str) and url.startswith(("https://", "http://"))
+        for title in [item.get("title") if isinstance(item.get("title"), str) else url]
     )
     if not bookmark_cards:
         bookmark_cards = '<div class="empty">Your saved pages will appear here.</div>'
