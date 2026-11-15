@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from browser.memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
-    record_history, resolve_url, save_setting,
+    record_history, remove_bookmark, resolve_url, save_setting,
 )
 
 
@@ -36,6 +36,8 @@ class MemingoBrowserTests(unittest.TestCase):
     def test_bookmarks_are_managed_by_memingo(self):
         add_bookmark("https://example.com", "Example")
         self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks()))
+        remove_bookmark("https://example.com")
+        self.assertFalse(any(item["url"] == "https://example.com" for item in list_bookmarks()))
 
     def test_history_records_visits(self):
         history = record_history("https://example.org", "Example Org")
