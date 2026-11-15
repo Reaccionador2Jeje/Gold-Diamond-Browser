@@ -16,7 +16,7 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from .memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, list_history, load_settings,
-    record_history, remove_bookmark, resolve_url, save_setting,
+    load_session, record_history, remove_bookmark, resolve_url, save_setting, save_session,
 )
 
 
@@ -204,7 +204,10 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
-        self._menu_action(tools_menu, "Browser settings", self.show_settings)\n        themes_menu = tools_menu.addMenu("Appearance")\n        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):\n            self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
+        self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        themes_menu = tools_menu.addMenu("Appearance")
+        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
+            self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
 
         help_menu = bar.addMenu("Help")
         self._menu_action(help_menu, "About Gold & Diamond", self.show_about)
@@ -505,7 +508,46 @@ class GoldDiamondWindow(QMainWindow):
         menu.addAction("Bing search", lambda: self.change_search("https://www.bing.com/search?q="))
         menu.exec(self.mapToGlobal(self.rect().center()))
 
-    def change_theme(self, theme_name: str):\n        if theme_name not in {"graphite", "midnight", "pearl"}:\n            return\n        try:\n            self.settings = save_setting("theme", theme_name)\n            self.theme_name = theme_name\n            self.setStyleSheet(self._stylesheet())\n            self.status.showMessage(f"Theme changed to {theme_name}", 4000)\n        except Exception as exc:\n            self.status.showMessage(f"Could not save theme: {exc}", 5000)\n\n    def restore_saved_session(self):\n        urls = []\n        if self.settings.get("restore_session", True):\n            try:\n                urls = load_session()\n            except Exception as exc:\n                self.status.showMessage(f"Session restore unavailable: {exc}", 5000)\n        valid = [url for url in urls if isinstance(url, str) and url.startswith(("https://", "http://"))]\n        if valid:\n            for url in valid:\n                self.new_tab(url)\n        else:\n            self.new_tab(self.settings.get("startup_page") or self.config.get("home_url"))\n\n    def persist_session(self):\n        urls = []\n        for index in range(self.tabs.count()):\n            view = self.tabs.widget(index)\n            if not isinstance(view, QWebEngineView) or view.property("private_mode"):\n                continue\n            url = view.url().toString()\n            if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:\n                urls.append(url)\n        try:\n            save_session(urls)\n        except Exception as exc:\n            self.status.showMessage(f"Could not save session: {exc}", 5000)\n\n    def change_search(self, engine: str):
+    def change_theme(self, theme_name: str):
+        if theme_name not in {"graphite", "midnight", "pearl"}:
+            return
+        try:
+            self.settings = save_setting("theme", theme_name)
+            self.theme_name = theme_name
+            self.setStyleSheet(self._stylesheet())
+            self.status.showMessage(f"Theme changed to {theme_name}", 4000)
+        except Exception as exc:
+            self.status.showMessage(f"Could not save theme: {exc}", 5000)
+
+    def restore_saved_session(self):
+        urls = []
+        if self.settings.get("restore_session", True):
+            try:
+                urls = load_session()
+            except Exception as exc:
+                self.status.showMessage(f"Session restore unavailable: {exc}", 5000)
+        valid = [url for url in urls if isinstance(url, str) and url.startswith(("https://", "http://"))]
+        if valid:
+            for url in valid:
+                self.new_tab(url)
+        else:
+            self.new_tab(self.settings.get("startup_page") or self.config.get("home_url"))
+
+    def persist_session(self):
+        urls = []
+        for index in range(self.tabs.count()):
+            view = self.tabs.widget(index)
+            if not isinstance(view, QWebEngineView) or view.property("private_mode"):
+                continue
+            url = view.url().toString()
+            if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:
+                urls.append(url)
+        try:
+            save_session(urls)
+        except Exception as exc:
+            self.status.showMessage(f"Could not save session: {exc}", 5000)
+
+    def change_search(self, engine: str):
         self.settings = save_setting("search_engine", engine)
         self.status.showMessage("Search engine preference saved", 4000)
 
@@ -566,4 +608,7 @@ class GoldDiamondWindow(QMainWindow):
         self.tabs.removeTab(index)
         if widget:
             widget.deleteLater()
-\n    def closeEvent(self, event):\n        self.persist_session()\n        event.accept()\n
+
+    def closeEvent(self, event):
+        self.persist_session()
+        event.accept()
