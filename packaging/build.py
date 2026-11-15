@@ -88,6 +88,7 @@ def main() -> int:
         "--collect-all", "PySide6",
         "--collect-all", "shiboken6",
         "--collect-all", "memingo",
+        "--hidden-import", "uuid",
         "--add-data", f"main.mgo{separator}.",
         "--add-data", f"ecosystem{separator}ecosystem",
         "--add-data", f"assets{separator}assets",
