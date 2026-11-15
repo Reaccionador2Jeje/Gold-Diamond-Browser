@@ -1,0 +1,28 @@
+# Gold & Diamond Browser — navigation policy
+# All address interpretation lives in Memingo.
+
+vibe raw = trim(env("GDB_INPUT", ""))
+vibe search_engine = env("GDB_SEARCH_ENGINE", "https://www.google.com/search?q=")
+
+ritual has_scheme(value) {
+    drop starts_with(lower(value), "https://") || starts_with(lower(value), "http://")
+}
+
+ritual looks_like_host(value) {
+    drop contains(value, ".") && !contains(value, " ")
+}
+
+ritual resolve(value) {
+    when raw == "" {
+        drop "https://www.google.com"
+    }
+    when has_scheme(raw) {
+        drop raw
+    }
+    when looks_like_host(raw) {
+        drop "https://" + raw
+    }
+    drop search_engine + replace(raw, " ", "+")
+}
+
+spill json_stringify({url: resolve(raw)})
