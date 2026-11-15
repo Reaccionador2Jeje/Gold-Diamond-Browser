@@ -163,7 +163,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(view_menu, "Fullscreen", self.toggle_fullscreen, "F11")
         self._menu_action(view_menu, "Show bookmarks", self.show_bookmarks, "Ctrl+Shift+B")
         self._menu_action(view_menu, "Show history", self.show_history, "Ctrl+H")
-        self._menu_action(view_menu, "Reader mode", self.toggle_reader_mode, "Ctrl+Shift+E")
+        self._menu_action(view_menu, "Reader mode", self.toggle_reader_mode)
         self._menu_action(view_menu, "Translate page", self.translate_page)
         self._menu_action(view_menu, "Capture page screenshot", self.save_screenshot)
 
@@ -172,7 +172,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
-        self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab, "Ctrl+Shift+T")
+        self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
         for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
@@ -247,7 +247,7 @@ class GoldDiamondWindow(QMainWindow):
             bookmarks = list_bookmarks()
         except Exception:
             bookmarks = []
-        return build_dashboard(self.theme_name, bookmarks)
+        return build_dashboard(self.theme_name, bookmarks, self.settings.get('search_engine', 'https://www.google.com/search?q='))
 
     def navigate(self):
         try:
@@ -594,7 +594,7 @@ class GoldDiamondWindow(QMainWindow):
         (() => {
           const style = document.createElement('style');
           style.id = 'gdb-reader-style';
-          style.textContent = 'html,body{background:#f4f0e7!important;color:#252525!important;font-family:Georgia,serif!important}body{max-width:820px!important;margin:40px auto!important;padding:32px!important;line-height:1.85!important;font-size:19px!important;box-shadow:0 8px 45px #0002!important}img,video,figure{max-width:100%!important;height:auto!important}nav,aside,footer,[role="navigation"],[role="complementary"],. 광고{display:none!important}a{color:#76551b!important}h1,h2,h3{line-height:1.25!important}';
+          style.textContent = 'html,body{background:#f4f0e7!important;color:#252525!important;font-family:Georgia,serif!important}body{max-width:820px!important;margin:40px auto!important;padding:32px!important;line-height:1.85!important;font-size:19px!important;box-shadow:0 8px 45px #0002!important}img,video,figure{max-width:100%!important;height:auto!important}nav,aside,footer,[role="navigation"],[role="complementary"]{display:none!important}a{color:#76551b!important}h1,h2,h3{line-height:1.25!important}';
           document.getElementById('gdb-reader-style')?.remove();
           document.head.appendChild(style);
         })();
