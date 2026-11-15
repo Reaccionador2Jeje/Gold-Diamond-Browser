@@ -12,32 +12,30 @@ ASSETS = ROOT / "assets"
 
 
 def create_icon_files() -> None:
-    """Rasterize the vector logo and create a multi-resolution Windows ICO."""
+    """Rasterize the vector logo and create native Windows/macOS icon files."""
     from PySide6.QtCore import Qt
-    from PySide6.QtGui import QColor, QImage, QPainter
+    from PySide6.QtGui import QImage, QPainter
     from PySide6.QtSvg import QSvgRenderer
 
-    source = ASSETS / "gold-diamond-icon.svg"
-    renderer = QSvgRenderer(str(source))
+    renderer = QSvgRenderer(str(ASSETS / "gold-diamond-icon.svg"))
     if not renderer.isValid():
         raise RuntimeError("Gold & Diamond SVG icon could not be loaded")
 
-    preview = QImage(512, 512, QImage.Format.Format_ARGB32)
-    preview.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(preview)
-    renderer.render(painter)
-    painter.end()
-    if not preview.save(str(ASSETS / "gold-diamond-icon.png"), "PNG"):
-        raise RuntimeError("Could not write the application PNG icon")
-
-    sizes = (16, 24, 32, 48, 64, 128, 256)
-    images = []
-    for size in sizes:
+    def render(size: int) -> QImage:
         image = QImage(size, size, QImage.Format.Format_ARGB32)
         image.fill(Qt.GlobalColor.transparent)
         painter = QPainter(image)
         renderer.render(painter)
         painter.end()
+        return image
+
+    if not render(512).save(str(ASSETS / "gold-diamond-icon.png"), "PNG"):
+        raise RuntimeError("Could not write the application PNG icon")
+
+    sizes = (16, 24, 32, 48, 64, 128, 256)
+    images = []
+    for size in sizes:
+        image = render(size)
         pixels = bytearray()
         for y in range(size - 1, -1, -1):
             for x in range(size):
@@ -60,7 +58,24 @@ def create_icon_files() -> None:
             0 if size == 256 else size, 0, 0, 1, 32, len(data), offset,
         ))
         offset += len(data)
-    (ASSETS / "gold-diamond-icon.ico").write_bytes(directory + b"".join(images))\n\n    if sys.platform == "darwin":\n        iconset = ASSETS / "gold-diamond.iconset"\n        iconset.mkdir(exist_ok=True)\n        for name, size in (("icon_16x16.png", 16), ("icon_16x16@2x.png", 32), ("icon_32x32.png", 32), ("icon_32x32@2x.png", 64), ("icon_128x128.png", 128), ("icon_128x128@2x.png", 256), ("icon_256x256.png", 256), ("icon_256x256@2x.png", 512), ("icon_512x512.png", 512), ("icon_512x512@2x.png", 1024)):\n            image = QImage(size, size, QImage.Format.Format_ARGB32)\n            image.fill(Qt.GlobalColor.transparent)\n            painter = QPainter(image)\n            renderer.render(painter)\n            painter.end()\n            image.save(str(iconset / name), "PNG")\n        subprocess.run(["iconutil", "-c", "icns", str(iconset), "-o", str(ASSETS / "gold-diamond-icon.icns")], check=True)
+    (ASSETS / "gold-diamond-icon.ico").write_bytes(directory + b"".join(images))
+
+    if sys.platform == "darwin":
+        iconset = ASSETS / "gold-diamond.iconset"
+        iconset.mkdir(exist_ok=True)
+        mac_sizes = (
+            ("icon_16x16.png", 16), ("icon_16x16@2x.png", 32),
+            ("icon_32x32.png", 32), ("icon_32x32@2x.png", 64),
+            ("icon_128x128.png", 128), ("icon_128x128@2x.png", 256),
+            ("icon_256x256.png", 256), ("icon_256x256@2x.png", 512),
+            ("icon_512x512.png", 512), ("icon_512x512@2x.png", 1024),
+        )
+        for name, size in mac_sizes:
+            render(size).save(str(iconset / name), "PNG")
+        subprocess.run(
+            ["iconutil", "-c", "icns", str(iconset), "-o", str(ASSETS / "gold-diamond-icon.icns")],
+            check=True,
+        )
 
 
 def main() -> int:
@@ -70,7 +85,6 @@ def main() -> int:
         sys.executable, "-m", "PyInstaller",
         "--noconfirm", "--clean", "--windowed", "--onedir",
         "--name", "GoldDiamondBrowser",
-        "--icon", str(ASSETS / ("gold-diamond-icon.icns" if sys.platform == "darwin" else "gold-diamond-icon.ico")),
         "--collect-all", "PySide6",
         "--collect-all", "shiboken6",
         "--collect-all", "memingo",
@@ -79,6 +93,10 @@ def main() -> int:
         "--add-data", f"assets{separator}assets",
         "run.py",
     ]
+    if sys.platform == "win32":
+        command.extend(["--icon", str(ASSETS / "gold-diamond-icon.ico")])
+    elif sys.platform == "darwin":
+        command.extend(["--icon", str(ASSETS / "gold-diamond-icon.icns")])
     return subprocess.call(command, cwd=ROOT)
 
 
