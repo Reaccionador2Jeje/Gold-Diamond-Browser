@@ -14,7 +14,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
+from .ai_assistant import AIAssistantDialog
 from .ui.dashboard import build_dashboard
+from .ui.settings_dialog import SettingsDialog
 from .ui.theme import build_stylesheet
 
 from .memingo_bridge import (
@@ -38,6 +40,9 @@ class GoldDiamondWindow(QMainWindow):
         self.download_items = []
         self.closed_tabs: list[dict[str, str]] = []
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
+        icon_path = Path(__file__).resolve().parents[1] / "assets" / "gold-diamond-icon.png"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
         self.setWindowIconText("G◆D")
         window = config.get("window", {})
         self.resize(window.get("width", 1440), window.get("height", 920))
@@ -92,6 +97,7 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Translate", "Translate the current page", self.translate_page)
         self._action(toolbar, "Capture", "Save a screenshot of this page", self.save_screenshot)
         self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
+        self._action(toolbar, "Ask AI", "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
 
         self.progress = QProgressBar()
@@ -167,6 +173,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        self._menu_action(tools_menu, "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
@@ -175,6 +182,7 @@ class GoldDiamondWindow(QMainWindow):
 
         help_menu = bar.addMenu("Help")
         self._menu_action(help_menu, "About Gold & Diamond", self.show_about)
+        self._menu_action(help_menu, "Credits & licenses", self.show_credits)
 
     def _register_shortcuts(self):
         self._shortcut("Ctrl+Shift+R", self.reload_page)
@@ -230,11 +238,11 @@ class GoldDiamondWindow(QMainWindow):
         if id(profile) not in self._download_connections:
             profile.downloadRequested.connect(self.handle_download)
             self._download_connections.add(id(profile))
-        if url:
-            view.setUrl(QUrl(url))
-        else:
+        if not url or url.rstrip("/") == "https://gold-diamond.local":
             view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
-            self.address.clear()
+            self.address.setText("gold-diamond.local")
+        else:
+            view.setUrl(QUrl(url))
         self.address.setFocus()
 
     def start_page_html(self) -> str:
@@ -462,20 +470,34 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("Browsing history cleared", 4000)
 
     def show_settings(self):
-        menu = QMenu("Quick settings", self)
-        appearance = menu.addMenu("Appearance")
-        for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light"), ("forest", "Emerald Forest")):
-            appearance.addAction(label, lambda selected=theme_name: self.change_theme(selected))
-        menu.addSeparator()
-        restore_action = menu.addAction("Restore tabs on startup")
-        restore_action.setCheckable(True)
-        restore_action.setChecked(self.settings.get("restore_session", True))
-        restore_action.triggered.connect(self.toggle_session_restore)
-        menu.addAction("Set current page as startup page", self.set_startup_page)
-        menu.addAction("Google search", lambda: self.change_search("https://www.google.com/search?q="))
-        menu.addAction("DuckDuckGo search", lambda: self.change_search("https://duckduckgo.com/?q="))
-        menu.addAction("Bing search", lambda: self.change_search("https://www.bing.com/search?q="))
-        menu.exec(self.mapToGlobal(self.rect().center()))
+        dialog = SettingsDialog(self.settings, self)
+        if dialog.exec() != SettingsDialog.DialogCode.Accepted:
+            return
+        try:
+            for key, value in dialog.values.items():
+                if key in {"startup_page", "search_engine", "restore_session", "theme", "ai_base_url", "ai_model"}:
+                    self.settings = save_setting(key, value)
+            self.theme_name = self.settings.get("theme", self.theme_name)
+            self.setStyleSheet(self._stylesheet())
+            self.status.showMessage("Settings saved", 4000)
+        except Exception as exc:
+            QMessageBox.warning(self, "Settings", f"Could not save settings: {exc}")
+
+    def show_ai_assistant(self):
+        dialog = AIAssistantDialog(self.settings, self)
+        dialog.exec()
+
+    def show_credits(self):
+        QMessageBox.about(
+            self, "Credits & licenses",
+            "<h2 style='color:#e5b85c'>◆ Gold &amp; Diamond Browser</h2>"
+            "<p><b>Created by AtDev Dev.</b></p>"
+            "<p>Application interface and Memingo-first browser logic by AtDev Dev.</p>"
+            "<p>Powered by Memingo and Qt WebEngine / Chromium.</p>"
+            "<p>Gold &amp; Diamond Browser is distributed under the Apache License 2.0. "
+            "See the LICENSE file in the source repository.</p>"
+            "<p>Third-party components retain their respective licenses and trademarks.</p>",
+        )
 
     def change_theme(self, theme_name: str):
         if theme_name not in {"graphite", "midnight", "pearl", "forest"}:
