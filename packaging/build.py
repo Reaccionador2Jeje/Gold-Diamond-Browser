@@ -91,6 +91,7 @@ def main() -> int:
         "--add-data", f"main.mgo{separator}.",
         "--add-data", f"ecosystem{separator}ecosystem",
         "--add-data", f"assets{separator}assets",
+        "--add-data", f"LICENSE{separator}.",
         "run.py",
     ]
     if sys.platform == "win32":
