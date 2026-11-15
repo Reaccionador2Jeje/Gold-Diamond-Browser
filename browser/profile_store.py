@@ -21,8 +21,30 @@ def _load() -> dict[str, Any]:
     try:
         data = json.loads(STORE.read_text(encoding="utf-8"))
         if isinstance(data, dict):
+            raw_profiles = data.get("profiles", [])
+            profiles = []
+            if isinstance(raw_profiles, list):
+                for item in raw_profiles:
+                    if not isinstance(item, dict):
+                        continue
+                    profile_id = item.get("id")
+                    name = item.get("name")
+                    if isinstance(profile_id, str) and profile_id and isinstance(name, str) and name:
+                        profiles.append({"id": profile_id, "name": name})
+            if not any(item["id"] == "default" for item in profiles):
+                profiles.insert(0, DEFAULT_PROFILE.copy())
+            data["profiles"] = profiles
+            if data.get("active_profile") not in {item["id"] for item in profiles}:
+                data["active_profile"] = "default"
+            valid_extensions = {item["id"] for item in BUILTIN_EXTENSIONS}
+            raw_extensions = data.get("extensions", [])
+            data["extensions"] = (
+                [item for item in raw_extensions if item in valid_extensions]
+                if isinstance(raw_extensions, list) else
+                [item["id"] for item in BUILTIN_EXTENSIONS]
+            )
             return data
-    except (OSError, ValueError):
+    except (OSError, ValueError, TypeError):
         pass
     return {"profiles": [DEFAULT_PROFILE.copy()], "active_profile": "default", "extensions": [x["id"] for x in BUILTIN_EXTENSIONS]}
 
