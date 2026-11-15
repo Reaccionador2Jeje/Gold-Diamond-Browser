@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from browser.memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
-    load_session, record_history, remove_bookmark, resolve_url, save_setting, save_session,
+    load_session, list_history, record_history, remove_bookmark, resolve_url, save_setting, save_session,
     list_workspaces, save_workspace,
 )
 
