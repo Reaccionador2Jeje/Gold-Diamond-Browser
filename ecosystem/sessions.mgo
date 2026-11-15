@@ -2,14 +2,7 @@
 # Memingo owns session persistence. Private tabs are filtered by the Qt host.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe profile_id = request.profile_id
-when profile_id == "" {
-    profile_id = "default"
-}
-vibe storage_path = "data/session-" + profile_id + ".json"
-when profile_id == "default" {
-    storage_path = "data/session.json"
-}
+vibe storage_path = env("GDB_STORAGE_PATH", "data/session.json")
 vibe tabs = []
 
 when file_exists(storage_path) {
@@ -21,4 +14,4 @@ when request.action == "save" {
     write_file(storage_path, json_stringify(tabs))
 }
 
-spill json_stringify({tabs: tabs, profile_id: profile_id})
+spill json_stringify({tabs: tabs})
