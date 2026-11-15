@@ -99,6 +99,6 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 
 ## Roadmap
 
-- 0.2.0 — bookmarks, browsing history and persistent settings.
+- 0.2.0 — Memingo-first architecture, persistent settings, bookmarks and browsing history.
 - 0.3.0 — downloads manager and privacy controls.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
