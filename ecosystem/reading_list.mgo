@@ -22,7 +22,7 @@ when request.action == "add" {
 }
 
 ritual keep_unique(item) {
-    drop item.url == request.url
+    drop item.url != request.url
 }
 
 when request.action == "remove" {
