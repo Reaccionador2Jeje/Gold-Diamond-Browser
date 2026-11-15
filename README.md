@@ -27,7 +27,7 @@
 - A custom gold-and-cyan diamond app icon is generated as PNG, Windows ICO and macOS ICNS during packaging; Linux desktop launchers include the icon.
 - Session restore: reopen regular tabs after restarting; private tabs are excluded.
 - Theme preferences and profile-scoped saved sessions are persisted by Memingo; each profile restores only its own regular tabs.
-- Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
+- Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions isolated per browser profile.
 - Dark graphite UI with gold and diamond accents.
 - Browser profiles with separate persistent Chromium storage; new tabs use the active profile while existing tabs remain in their original profile.\n- Built-in Extension Center for Reader Mode, Quick Translate and Page Capture; these are native browser tools, not Chrome Web Store extensions.\n- Privacy Center to clear the active profile cache, cookies and locally recorded browsing history. This does not provide anonymity or erase website/network records.\n- Named Workspaces save and restore groups of regular tabs through Memingo-managed storage.
 - Split View displays two independent web pages side by side, with a dedicated address field for the secondary pane.
@@ -41,9 +41,11 @@ Memingo is the primary application and policy language. New browser behavior sho
 - `ecosystem/navigation.mgo` owns address interpretation and search routing.
 - `ecosystem/settings.mgo` owns default settings and persistent settings updates.
 - `ecosystem/bookmarks.mgo` owns bookmark storage and updates.
-- `ecosystem/history.mgo` owns visit recording and history storage.
+- `ecosystem/history.mgo` owns profile-scoped visit recording and history storage.
+- `ecosystem/bookmarks.mgo` owns profile-scoped bookmark storage and updates.
 - `ecosystem/workspaces.mgo` owns named workspace persistence and retrieval.
 - `ecosystem/sessions.mgo` stores separate session files for each browser profile, with migration support for the previous default-profile session.
+- Existing default-profile bookmarks and history are read as migration fallbacks; new writes use profile-specific files.
 - `browser/memingo_bridge.py` is a narrow execution and serialization adapter.
 - `browser/window.py` is the Qt browser controller and Chromium WebEngine integration.
 - `browser/ui/theme.py` contains reusable visual themes.
