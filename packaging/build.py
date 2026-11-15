@@ -89,6 +89,7 @@ def main() -> int:
         "--collect-all", "shiboken6",
         "--collect-all", "memingo",
         "--hidden-import", "uuid",
+        "--hidden-import", "http.server",
         "--add-data", f"main.mgo{separator}.",
         "--add-data", f"ecosystem{separator}ecosystem",
         "--add-data", f"assets{separator}assets",
