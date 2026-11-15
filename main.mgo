@@ -3,7 +3,7 @@
 
 vibe app = {
     name: "Gold & Diamond Browser",
-    version: "0.1.0",
+    version: "0.5.0",
     search_engine: "https://www.google.com/search?q=",
     home_url: "https://gold-diamond.local/",
     theme: {
