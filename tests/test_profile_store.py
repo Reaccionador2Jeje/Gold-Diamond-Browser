@@ -27,6 +27,19 @@ class ProfileStoreTests(unittest.TestCase):
         second = profile_store.create_profile("Work")
         self.assertNotEqual(first["id"], second["id"])
 
+    def test_corrupt_profile_entries_fall_back_safely(self):
+        self.store.write_text(
+            '{"profiles": [null, {"id": "work", "name": "Work"}, "broken"], '
+            '"active_profile": "missing", "extensions": "not-a-list"}',
+            encoding="utf-8",
+        )
+        self.assertEqual(
+            profile_store.list_profiles(),
+            [{"id": "default", "name": "Personal"}, {"id": "work", "name": "Work"}],
+        )
+        self.assertEqual(profile_store.active_profile_id(), "default")
+        self.assertEqual(profile_store.enabled_extensions(), {"reader", "translator", "capture"})
+
     def test_extension_preferences_are_validated(self):
         profile_store.set_extension_enabled("reader", False)
         self.assertNotIn("reader", profile_store.enabled_extensions())
