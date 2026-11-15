@@ -1,5 +1,8 @@
 """Smoke tests for Memingo-owned browser behavior."""
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from browser.memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
@@ -8,6 +11,13 @@ from browser.memingo_bridge import (
 
 
 class MemingoBrowserTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        patcher = patch("browser.memingo_bridge.DATA_DIR", Path(self.temp_dir.name))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.temp_dir.cleanup)
+
     def test_configuration_is_loaded_from_memingo(self):
         config = load_config()
         self.assertEqual(config["name"], "Gold & Diamond Browser")
@@ -22,8 +32,6 @@ class MemingoBrowserTests(unittest.TestCase):
     def test_setting_can_be_persisted(self):
         settings = save_setting("startup_page", "https://example.com")
         self.assertEqual(settings["startup_page"], "https://example.com")
-        # Restore the default so this test is repeatable.
-        save_setting("startup_page", "https://www.google.com")
 
     def test_bookmarks_are_managed_by_memingo(self):
         add_bookmark("https://example.com", "Example")
