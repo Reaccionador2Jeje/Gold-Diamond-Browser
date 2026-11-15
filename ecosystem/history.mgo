@@ -1,12 +1,21 @@
-# Gold & Diamond Browser — browsing history
+# Gold & Diamond Browser — profile-scoped browsing history
 # History records are stored and managed by Memingo.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe storage_path = "data/history.json"
+vibe profile_id = request.profile_id
+when profile_id == "" {
+    profile_id = "default"
+}
+vibe storage_path = "data/history-" + profile_id + ".json"
+vibe legacy_path = "data/history.json"
 vibe entries = []
 
 when file_exists(storage_path) {
     entries = json_parse(read_file(storage_path))
+} else {
+    when profile_id == "default" && file_exists(legacy_path) {
+        entries = json_parse(read_file(legacy_path))
+    }
 }
 
 when request.action == "add" {
@@ -25,4 +34,4 @@ when request.action == "clear" {
     write_file(storage_path, json_stringify(entries))
 }
 
-spill json_stringify({history: entries})
+spill json_stringify({history: entries, profile_id: profile_id})
