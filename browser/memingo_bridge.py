@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,14 +13,34 @@ ROOT = Path(__file__).resolve().parents[1]
 ECOSYSTEM = ROOT / "ecosystem"
 
 
-def run_memingo(path: Path, *, extra_env: dict[str, str] | None = None) -> list[str]:
+def _user_data_directory() -> Path:
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    directory = base / "Gold-Diamond-Browser"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+DATA_DIR = _user_data_directory()
+
+
+def run_memingo(
+    path: Path,
+    *,
+    extra_env: dict[str, str] | None = None,
+    project_directory: Path = ROOT,
+) -> list[str]:
     previous: dict[str, str | None] = {}
     try:
         for key, value in (extra_env or {}).items():
             previous[key] = os.environ.get(key)
             os.environ[key] = value
         source = path.read_text(encoding="utf-8")
-        return list(execute(source, project_directory=ROOT))
+        return list(execute(source, project_directory=project_directory))
     finally:
         for key, value in previous.items():
             if value is None:
@@ -49,14 +70,25 @@ def load_config() -> dict[str, Any]:
 
 
 def load_settings() -> dict[str, Any]:
-    return _json_result("settings.mgo", extra_env={"GDB_REQUEST": json.dumps({"action": "get"})})
+    output = run_memingo(
+        ECOSYSTEM / "settings.mgo",
+        extra_env={"GDB_REQUEST": json.dumps({"action": "get"})},
+        project_directory=DATA_DIR,
+    )
+    if not output:
+        raise RuntimeError("Memingo settings module returned no result")
+    return json.loads(output[-1])
 
 
 def save_setting(key: str, value: Any) -> dict[str, Any]:
-    return _json_result(
-        "settings.mgo",
+    output = run_memingo(
+        ECOSYSTEM / "settings.mgo",
         extra_env={"GDB_REQUEST": json.dumps({"action": "set", "key": key, "value": value})},
+        project_directory=DATA_DIR,
     )
+    if not output:
+        raise RuntimeError("Memingo settings module returned no result")
+    return json.loads(output[-1])
 
 
 def resolve_url(value: str, search_engine: str | None = None) -> str:
