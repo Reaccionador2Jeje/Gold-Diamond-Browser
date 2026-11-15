@@ -104,14 +104,9 @@ class GoldDiamondWindow(QMainWindow):
         self.bookmark_toolbar.setMovable(False)
         self.bookmark_toolbar.setObjectName("QuickBookmarks")
         self.addToolBar(self.bookmark_toolbar)
-        self.refresh_bookmark_bar()
 
     def _build_bookmark_bar(self):
-        self.bookmark_toolbar.addAction("◆  Gold & Diamond")
-        self.bookmark_toolbar.actions()[0].setEnabled(False)
-        self.bookmark_toolbar.addSeparator()
-        self.bookmark_toolbar.addAction("＋ Add current page", self.add_current_bookmark)
-        self.bookmark_toolbar.addAction("All bookmarks  ▾", self.show_bookmarks)
+        self.refresh_bookmark_bar()
 
     def _build_sidebar(self):
         self.sidebar = QDockWidget("YOUR LIBRARY  ◆", self)
