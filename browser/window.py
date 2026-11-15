@@ -16,7 +16,7 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from .memingo_bridge import (
     add_bookmark, clear_history, list_bookmarks, list_history, load_settings,
-    record_history, resolve_url, save_setting,
+    record_history, remove_bookmark, resolve_url, save_setting,
 )
 
 
@@ -322,9 +322,11 @@ class GoldDiamondWindow(QMainWindow):
             url = item.get("url", "")
             label = item.get("title") or url
             if url:
-                action = menu.addAction(label[:55])
-                action.setToolTip(url)
-                action.triggered.connect(lambda checked=False, target=url: self.navigate_to(target))
+                item_menu = menu.addMenu(label[:45])
+                open_action = item_menu.addAction("Open")
+                open_action.triggered.connect(lambda checked=False, target=url: self.navigate_to(target))
+                remove_action = item_menu.addAction("Remove bookmark")
+                remove_action.triggered.connect(lambda checked=False, target=url: self.remove_saved_bookmark(target))
         menu.addSeparator()
         menu.addAction("Open library sidebar", self.toggle_sidebar)
         menu.exec(self.mapToGlobal(self.rect().center()))
@@ -334,6 +336,14 @@ class GoldDiamondWindow(QMainWindow):
 
     def show_history(self):
         self._saved_menu(list_history(), "No browsing history yet", "Recently visited")
+
+    def remove_saved_bookmark(self, url: str):
+        try:
+            remove_bookmark(url)
+            self.refresh_bookmark_bar()
+            self.status.showMessage("Bookmark removed", 3500)
+        except Exception as exc:
+            self.status.showMessage(f"Could not remove bookmark: {exc}", 5000)
 
     def refresh_bookmark_bar(self):
         if not hasattr(self, "bookmark_toolbar"):
