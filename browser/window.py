@@ -15,6 +15,8 @@ from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, Q
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from .ai_assistant import AIAssistantDialog
+from .profile_store import active_profile_id, create_profile, enabled_extensions, set_active_profile
+from .ui.ecosystem_dialog import EcosystemDialog
 from .ui.dashboard import build_dashboard
 from .ui.settings_dialog import SettingsDialog
 from .ui.theme import build_stylesheet
@@ -39,6 +41,8 @@ class GoldDiamondWindow(QMainWindow):
         self._download_connections = set()
         self.download_items = []
         self.closed_tabs: list[dict[str, str]] = []
+        self.active_profile_id = active_profile_id()
+        self.browser_profiles = {}
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
         icon_path = Path(__file__).resolve().parents[1] / "assets" / "gold-diamond-icon.svg"
         if icon_path.exists():
@@ -175,6 +179,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
         self._menu_action(tools_menu, "Ask Gold & Diamond AI", self.show_ai_assistant)
+        self._menu_action(tools_menu, "Browser Ecosystem · Profiles · Extensions · Privacy", self.show_ecosystem_manager)
         self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
@@ -228,6 +233,8 @@ class GoldDiamondWindow(QMainWindow):
             private_profile = QWebEngineProfile(self)
             private_page = QWebEnginePage(private_profile, view)
             view.setPage(private_page)
+        else:
+            view.setPage(QWebEnginePage(self._persistent_profile(self.active_profile_id), view))
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
@@ -247,6 +254,18 @@ class GoldDiamondWindow(QMainWindow):
         else:
             view.setUrl(QUrl(url))
         self.address.setFocus()
+
+    def _persistent_profile(self, profile_id: str) -> QWebEngineProfile:
+        if profile_id in self.browser_profiles:
+            return self.browser_profiles[profile_id]
+        from .memingo_bridge import DATA_DIR
+        profile_dir = DATA_DIR / 'profiles' / profile_id
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        profile = QWebEngineProfile(profile_id, self)
+        profile.setPersistentStoragePath(str(profile_dir / 'storage'))
+        profile.setCachePath(str(profile_dir / 'cache'))
+        self.browser_profiles[profile_id] = profile
+        return profile
 
     def start_page_html(self) -> str:
         try:
@@ -495,6 +514,36 @@ class GoldDiamondWindow(QMainWindow):
             clear_history()
             self.status.showMessage("Browsing history cleared", 4000)
 
+    def show_ecosystem_manager(self):
+        dialog = EcosystemDialog(self)
+        result = dialog.exec()
+        try:
+            for extension_id, checkbox in dialog.extension_values.items():
+                from .profile_store import set_extension_enabled
+                set_extension_enabled(extension_id, checkbox.isChecked())
+            if dialog.new_profile_name:
+                profile = create_profile(dialog.new_profile_name)
+                self.active_profile_id = profile['id']
+                self.status.showMessage('Profile created; new tabs use it', 4500)
+            elif dialog.profile_to_activate:
+                set_active_profile(dialog.profile_to_activate)
+                self.active_profile_id = dialog.profile_to_activate
+                self.status.showMessage('Active profile changed; existing tabs keep their original profile', 5000)
+            if result == 4:
+                self.clear_profile_data()
+        except Exception as exc:
+            QMessageBox.warning(self, 'Browser Ecosystem', f'Could not apply changes: {exc}')
+
+    def clear_profile_data(self):
+        profile = self._persistent_profile(self.active_profile_id)
+        profile.clearHttpCache()
+        profile.cookieStore().deleteAllCookies()
+        try:
+            clear_history()
+        except Exception:
+            pass
+        self.status.showMessage('Cache, cookies and local browsing history cleared', 5000)
+
     def show_settings(self):
         dialog = SettingsDialog(self.settings, self)
         if dialog.exec() != SettingsDialog.DialogCode.Accepted:
@@ -625,6 +674,9 @@ class GoldDiamondWindow(QMainWindow):
         self.status.showMessage("Session restore " + ("enabled" if enabled else "disabled"), 3500)
 
     def toggle_reader_mode(self):
+        if 'reader' not in enabled_extensions():
+            self.status.showMessage('Reader Mode is disabled in Browser Ecosystem → Extension center', 4500)
+            return
         view = self.current_view()
         if not view:
             return
@@ -647,6 +699,9 @@ class GoldDiamondWindow(QMainWindow):
         self.status.showMessage("Reader mode enabled · reload to restore original layout", 4500)
 
     def translate_page(self):
+        if 'translator' not in enabled_extensions():
+            self.status.showMessage('Quick Translate is disabled in Browser Ecosystem → Extension center', 4500)
+            return
         view = self.current_view()
         if not view:
             return
@@ -658,6 +713,9 @@ class GoldDiamondWindow(QMainWindow):
         self.navigate_to("https://translate.google.com/translate?sl=auto&tl=es&u=" + quote(url, safe=""))
         
     def save_screenshot(self):
+        if 'capture' not in enabled_extensions():
+            self.status.showMessage('Page Capture is disabled in Browser Ecosystem → Extension center', 4500)
+            return
         view = self.current_view()
         if not view:
             return
