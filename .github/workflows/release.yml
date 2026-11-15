@@ -76,6 +76,7 @@ jobs:
           Terminal=false
           Type=Application
           Categories=Network;WebBrowser;
+          Icon=/opt/gold-diamond-browser/assets/gold-diamond-icon.png
           StartupNotify=true
           EOF
           fpm -s dir -t deb -C package-root -n gold-diamond-browser -v 0.1.0 --architecture amd64 --description "Gold & Diamond Browser desktop web browser" opt usr
