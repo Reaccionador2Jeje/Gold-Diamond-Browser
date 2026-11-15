@@ -29,8 +29,13 @@ def _load() -> dict[str, Any]:
                         continue
                     profile_id = item.get("id")
                     name = item.get("name")
-                    if isinstance(profile_id, str) and profile_id and isinstance(name, str) and name:
-                        profiles.append({"id": profile_id, "name": name})
+                    if (
+                        isinstance(profile_id, str)
+                        and re.fullmatch(r"[a-zA-Z0-9_-]{1,32}", profile_id)
+                        and isinstance(name, str)
+                        and name.strip()
+                    ):
+                        profiles.append({"id": profile_id, "name": name.strip()[:48]})
             if not any(item["id"] == "default" for item in profiles):
                 profiles.insert(0, DEFAULT_PROFILE.copy())
             data["profiles"] = profiles
@@ -39,7 +44,7 @@ def _load() -> dict[str, Any]:
             valid_extensions = {item["id"] for item in BUILTIN_EXTENSIONS}
             raw_extensions = data.get("extensions", [])
             data["extensions"] = (
-                [item for item in raw_extensions if item in valid_extensions]
+                [item for item in raw_extensions if isinstance(item, str) and item in valid_extensions]
                 if isinstance(raw_extensions, list) else
                 [item["id"] for item in BUILTIN_EXTENSIONS]
             )
@@ -65,6 +70,8 @@ def list_profiles() -> list[dict[str, str]]:
 def active_profile_id() -> str:
     data = _load()
     active = data.get("active_profile", "default")
+    if not isinstance(active, str):
+        return "default"
     return active if any(p.get("id") == active for p in list_profiles()) else "default"
 
 
