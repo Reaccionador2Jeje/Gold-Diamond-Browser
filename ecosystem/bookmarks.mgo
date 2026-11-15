@@ -9,8 +9,13 @@ when file_exists(storage_path) {
     bookmarks = json_parse(read_file(storage_path))
 }
 
+ritual keep_bookmark(item) {
+    drop item.url != request.url
+}
+
 when request.action == "add" {
     when request.url != "" {
+        bookmarks = filter(bookmarks, keep_bookmark)
         push(bookmarks, {
             url: request.url,
             title: request.title,
@@ -18,10 +23,6 @@ when request.action == "add" {
         })
         write_file(storage_path, json_stringify(bookmarks))
     }
-}
-
-ritual keep_bookmark(item) {
-    drop item.url != request.url
 }
 
 when request.action == "remove" {
