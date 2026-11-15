@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QInputDialog,
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
-    QTabWidget, QToolBar, QVBoxLayout, QWidget,
+    QTabWidget, QToolBar, QVBoxLayout, QWidget, QSplitter,
 )
 from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -25,6 +25,7 @@ from .memingo_bridge import (
     add_bookmark, add_reading_item, clear_history, list_bookmarks, list_history,
     list_reading_list, load_settings, load_session, record_history, remove_bookmark,
     remove_reading_item, resolve_url, save_setting, save_session,
+    list_workspaces, save_workspace,
 )
 
 
@@ -44,6 +45,10 @@ class GoldDiamondWindow(QMainWindow):
         self.closed_tabs: list[dict[str, str]] = []
         self.active_profile_id = active_profile_id()
         self.browser_profiles = {}
+        self.split_view: QWebEngineView | None = None
+        self.split_panel: QWidget | None = None
+        self.splitter: QSplitter | None = None
+        self.split_address: QLineEdit | None = None
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
         icon_path = Path(__file__).resolve().parents[1] / "assets" / "gold-diamond-icon.svg"
         if icon_path.exists():
@@ -175,6 +180,11 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(view_menu, "Reader mode", self.toggle_reader_mode)
         self._menu_action(view_menu, "Translate page", self.translate_page)
         self._menu_action(view_menu, "Capture page screenshot", self.save_screenshot)
+        self._menu_action(view_menu, "Toggle Split View", self.toggle_split_view, "Ctrl+Shift+V")
+
+        spaces_menu = bar.addMenu("Workspaces")
+        self._menu_action(spaces_menu, "Save current tabs as workspace…", self.save_current_workspace, "Ctrl+Shift+W")
+        self._menu_action(spaces_menu, "Open workspace…", self.open_workspace)
 
         tools_menu = bar.addMenu("Tools")
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
@@ -211,6 +221,8 @@ class GoldDiamondWindow(QMainWindow):
         self._shortcut("Ctrl+Shift+T", self.reopen_closed_tab)
         self._shortcut("Ctrl+J", self.show_downloads)
         self._shortcut("Ctrl+Shift+E", self.toggle_reader_mode)
+        self._shortcut("Ctrl+Shift+V", self.toggle_split_view)
+        self._shortcut("Ctrl+Shift+W", self.save_current_workspace)
 
     def _action(self, toolbar, label, tooltip, callback, shortcut=None):
         action = QAction(label, self)
@@ -431,6 +443,136 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("Removed from Reading List", 3000)
         except Exception as exc:
             self.status.showMessage(f"Could not remove saved page: {exc}", 5000)
+
+
+    def save_current_workspace(self):
+        urls = []
+        for index in range(self.tabs.count()):
+            view = self.tabs.widget(index)
+            if not isinstance(view, QWebEngineView) or view.property("private_mode"):
+                continue
+            url = view.url().toString()
+            if url.startswith(("https://", "http://")) and "gold-diamond.local" not in url:
+                urls.append(url)
+        if not urls:
+            self.status.showMessage("Open at least one regular website before saving a workspace", 4000)
+            return
+        name, accepted = QInputDialog.getText(self, "Save workspace", "Workspace name:")
+        if not accepted or not name.strip():
+            return
+        try:
+            save_workspace(name.strip(), urls)
+            self.status.showMessage(f'Workspace "{name.strip()}" saved · {len(urls)} tabs', 4000)
+        except Exception as exc:
+            QMessageBox.warning(self, "Workspaces", f"Could not save workspace: {exc}")
+
+    def open_workspace(self):
+        try:
+            workspaces = list_workspaces()
+        except Exception as exc:
+            QMessageBox.warning(self, "Workspaces", f"Could not load workspaces: {exc}")
+            return
+        valid = [
+            item for item in workspaces
+            if isinstance(item, dict) and isinstance(item.get("tabs"), list)
+            and any(isinstance(url, str) and url.startswith(("https://", "http://")) for url in item["tabs"])
+        ]
+        if not valid:
+            self.status.showMessage("No saved workspaces yet", 3500)
+            return
+        labels = [
+            f'{item.get("name") or "Workspace"} · {len(item["tabs"])} tabs'
+            for item in valid
+        ]
+        selected, accepted = QInputDialog.getItem(
+            self, "Open workspace", "Choose a saved workspace:", labels, 0, False
+        )
+        if not accepted:
+            return
+        workspace = valid[labels.index(selected)]
+        urls = [
+            url for url in workspace["tabs"]
+            if isinstance(url, str) and url.startswith(("https://", "http://"))
+        ]
+        for url in urls:
+            self.new_tab(url)
+        self.status.showMessage(f'Workspace "{workspace.get("name") or "Workspace"}" opened', 4000)
+
+    def toggle_split_view(self):
+        if self.splitter is not None:
+            self.setCentralWidget(self.tabs)
+            if self.split_view is not None:
+                self.split_view.deleteLater()
+            if self.splitter is not None:
+                self.splitter.deleteLater()
+            self.split_view = None
+            self.split_panel = None
+            self.splitter = None
+            self.split_address = None
+            self.status.showMessage("Split View closed", 3000)
+            return
+
+        source = self.current_view()
+        if source is None:
+            self.status.showMessage("Open a tab before enabling Split View", 3500)
+            return
+
+        panel = QWidget()
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(8, 8, 8, 8)
+        panel_layout.setSpacing(6)
+        header = QHBoxLayout()
+        header.addWidget(QLabel("◆  SPLIT VIEW"))
+        address = QLineEdit()
+        address.setPlaceholderText("Search or enter an address for this pane")
+        address.setText(source.url().toString())
+        address.returnPressed.connect(self.navigate_split_view)
+        header.addWidget(address, 1)
+        close_button = QPushButton("×")
+        close_button.setToolTip("Close Split View")
+        close_button.clicked.connect(self.toggle_split_view)
+        header.addWidget(close_button)
+        panel_layout.addLayout(header)
+
+        view = QWebEngineView()
+        view.setProperty("private_mode", bool(source.property("private_mode")))
+        view.setProperty("internal_home", bool(source.property("internal_home")))
+        view.setPage(QWebEnginePage(source.page().profile(), view))
+        view.urlChanged.connect(lambda qurl, field=address: field.setText(qurl.toString()))
+        view.loadFinished.connect(lambda ok, browser=view: self.page_loaded(ok, browser))
+        panel_layout.addWidget(view, 1)
+
+        profile = view.page().profile()
+        if id(profile) not in self._download_connections:
+            profile.downloadRequested.connect(self.handle_download)
+            self._download_connections.add(id(profile))
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.addWidget(self.tabs)
+        splitter.addWidget(panel)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+        self.setCentralWidget(splitter)
+
+        self.split_view = view
+        self.split_panel = panel
+        self.splitter = splitter
+        self.split_address = address
+        if source.property("internal_home"):
+            view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
+        else:
+            view.setUrl(source.url())
+        self.status.showMessage("Split View enabled · navigate independently in the right pane", 4500)
+
+    def navigate_split_view(self):
+        if self.split_view is None or self.split_address is None:
+            return
+        try:
+            url = resolve_url(self.split_address.text(), self.settings.get("search_engine"))
+            self.split_view.setProperty("internal_home", False)
+            self.split_view.setUrl(QUrl(url))
+        except Exception as exc:
+            self.status.showMessage(f"Split View navigation error: {exc}", 5000)
 
     def remove_saved_bookmark(self, url: str):
         try:
