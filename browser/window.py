@@ -255,6 +255,13 @@ class GoldDiamondWindow(QMainWindow):
 
     def navigate(self):
         try:
+            typed = self.address.text().strip().rstrip("/")
+            if typed in {"gold-diamond.local", "https://gold-diamond.local", "http://gold-diamond.local"}:
+                view = self.current_view()
+                if view:
+                    view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
+                    self.address.setText("gold-diamond.local")
+                return
             url = resolve_url(self.address.text(), self.settings.get("search_engine"))
             view = self.current_view()
             if view:
@@ -264,7 +271,11 @@ class GoldDiamondWindow(QMainWindow):
 
     def navigate_to(self, url: str):
         if self.current_view():
-            self.current_view().setUrl(QUrl(url))
+            if url.rstrip("/") == "https://gold-diamond.local":
+                self.current_view().setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
+                self.address.setText("gold-diamond.local")
+            else:
+                self.current_view().setUrl(QUrl(url))
 
     def load_started(self):
         self.progress.setValue(0)
@@ -275,10 +286,12 @@ class GoldDiamondWindow(QMainWindow):
         if browser is self.current_view():
             self.progress.hide()
             mode = "  PRIVATE" if browser.property("private_mode") else ""
-            self.security_label.setText(("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY") + mode)
+            host = browser.url().host().lower()
+            state = "◆  HOME" if host == "gold-diamond.local" else ("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY")
+            self.security_label.setText(state + mode)
         self.status.showMessage("Page loaded" if ok else "Page could not be loaded", 4000)
         url = browser.url().toString()
-        if ok and url.startswith(("https://", "http://")) and not browser.property("private_mode"):
+        if ok and url.startswith(("https://", "http://")) and "gold-diamond.local" not in url and not browser.property("private_mode"):
             try:
                 record_history(url, browser.title() or url)
             except Exception as exc:
@@ -286,7 +299,7 @@ class GoldDiamondWindow(QMainWindow):
 
     def update_address(self, qurl: QUrl, browser: QWebEngineView):
         if browser is self.current_view():
-            self.address.setText(qurl.toString())
+            self.address.setText("gold-diamond.local" if qurl.host().lower() == "gold-diamond.local" else qurl.toString())
 
     def update_title(self, title: str, browser: QWebEngineView):
         index = self.tabs.indexOf(browser)
@@ -303,7 +316,9 @@ class GoldDiamondWindow(QMainWindow):
 
     def sync_address(self, _index: int):
         view = self.current_view()
-        if view and view.url().scheme() in ("http", "https"):
+        if view and view.url().host().lower() == "gold-diamond.local":
+            self.address.setText("gold-diamond.local")
+        elif view and view.url().scheme() in ("http", "https"):
             self.address.setText(view.url().toString())
         else:
             self.address.clear()
