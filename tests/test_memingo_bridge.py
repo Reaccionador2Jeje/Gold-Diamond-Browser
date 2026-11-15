@@ -21,12 +21,12 @@ class MemingoBrowserTests(unittest.TestCase):
     def test_configuration_is_loaded_from_memingo(self):
         config = load_config()
         self.assertEqual(config["name"], "Gold & Diamond Browser")
-        self.assertEqual(config["version"], "0.1.0")
+        self.assertEqual(config["version"], "0.5.0")
         self.assertIn("gold", config["theme"])
 
     def test_settings_have_memingo_defaults(self):
         settings = load_settings()
-        self.assertEqual(settings["startup_page"], "https://www.google.com")
+        self.assertEqual(settings["startup_page"], "https://gold-diamond.local/")
         self.assertIn("restore_session", settings)
 
     def test_setting_can_be_persisted(self):
