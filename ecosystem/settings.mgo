@@ -1,0 +1,24 @@
+# Gold & Diamond Browser — persistent settings
+# Memingo owns defaults, validation and persistence decisions.
+
+vibe request = json_parse(env("GDB_REQUEST", "{}"))
+vibe settings_path = "data/settings.json"
+vibe settings = {
+    startup_page: "https://www.google.com",
+    search_engine: "https://www.google.com/search?q=",
+    restore_session: based,
+    ask_before_closing: cringe
+}
+
+when file_exists(settings_path) {
+    settings = json_parse(read_file(settings_path))
+}
+
+when request.action == "set" {
+    when request.key == "startup_page" || request.key == "search_engine" || request.key == "restore_session" || request.key == "ask_before_closing" {
+        set_value(settings, request.key, request.value)
+        write_file(settings_path, json_stringify(settings))
+    }
+}
+
+spill json_stringify(settings)
