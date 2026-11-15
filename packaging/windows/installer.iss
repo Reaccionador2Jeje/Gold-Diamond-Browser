@@ -1,5 +1,5 @@
 #define AppName "Gold & Diamond Browser"
-#define AppVersion "0.1.0"
+#define AppVersion "0.5.0"
 #define AppPublisher "AtDev Dev"
 #define AppExeName "GoldDiamondBrowser.exe"
 
@@ -11,7 +11,7 @@ AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\Gold & Diamond Browser
 DefaultGroupName={#AppName}
 OutputDir=..\..\dist
-OutputBaseFilename=Gold-Diamond-Browser-Setup-0.1.0
+OutputBaseFilename=Gold-Diamond-Browser-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
