@@ -9,59 +9,82 @@
 - Back, forward, reload and home controls.
 - Multiple tabs, close/reorder tabs and keyboard shortcuts.
 - Dark graphite UI with gold and diamond accents.
+- Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
 
 ## Architecture
 
 Memingo is the browser's application brain:
-- `main.mgo` defines application identity, theme and window configuration.
-- `src/navigation.mgo` resolves typed addresses and search queries.
-- `browser/memingo_bridge.py` is the narrow adapter that executes Memingo programs.
-- `browser/window.py` provides the Qt WebEngine interface.
-- `run.py` starts the desktop application.
+- \`main.mgo\` defines application identity, theme and window configuration.
+- \`src/navigation.mgo\` resolves typed addresses and search queries.
+- \`browser/memingo_bridge.py\` is the narrow adapter that executes Memingo programs.
+- \`browser/window.py\` provides the Qt WebEngine interface.
+- \`run.py\` starts the desktop application.
 
-## Requirements
+## Requirements for running from source
 
 - Python 3.10+
 - Memingo 0.2+
 - PySide6 6.7+ (includes Qt WebEngine components)
 
-## Setup
+## Setup from source
 
 Clone both repositories side by side:
 
-```text
+\`\`\`text
 workspace/
 ├── Memingo/
 └── Gold-Diamond-Browser/
-```
+\`\`\`
 
 Install Memingo from its local checkout:
 
-```bash
+\`\`\`bash
 cd Memingo
 python -m pip install -e .
 cd ../Gold-Diamond-Browser
 python -m venv .venv
-```
+\`\`\`
 
 Activate the environment:
 
-```powershell
+\`\`\`powershell
 # Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
+.venv\\Scripts\\Activate.ps1
+\`\`\`
 
-```bash
+\`\`\`bash
 # Linux / macOS
 source .venv/bin/activate
-```
+\`\`\`
 
 Install browser dependencies and launch:
 
-```bash
+\`\`\`bash
 python -m pip install -r requirements.txt
 python run.py
-```
+\`\`\`
+
+## Installers
+
+The release workflow builds these packages on native GitHub-hosted runners:
+
+| Platform | Package | Installation |
+|---|---|---|
+| Windows x64 | \`.exe\` | Graphical Inno Setup wizard, Start Menu shortcut and optional desktop shortcut |
+| Debian/Ubuntu x64 | \`.deb\` | Install with the system package installer or \`sudo apt install ./gold-diamond-browser_0.1.0_amd64.deb\` |
+| Fedora/RHEL x64 | \`.rpm\` | Install with the system package installer or \`sudo dnf install ./gold-diamond-browser-0.1.0-1.x86_64.rpm\` |
+| macOS | \`.dmg\` | Open the disk image and drag the app to Applications |
+
+To publish version 0.1.0, create and push the tag:
+
+\`\`\`bash
+git tag v0.1.0
+git push origin v0.1.0
+\`\`\`
+
+GitHub Actions then builds all platform installers and attaches them to a GitHub Release named **Gold & Diamond Browser v0.1.0**. The release is published only after all three platform builds succeed.
+
+Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gatekeeper may show warnings until signing identities are configured.
 
 ## Keyboard shortcuts
 
@@ -74,14 +97,8 @@ python run.py
 | Alt+Right | Forward |
 | Alt+Home | Home |
 
-On macOS, Qt maps the standard shortcuts according to the platform keyboard conventions.
-
-## Platform support
-
-The codebase targets Windows, Linux and macOS. Install and test dependencies on each target operating system; native packaging and signing are planned for a later milestone.
-
 ## Roadmap
 
 - 0.2.0 — bookmarks, browsing history and persistent settings.
 - 0.3.0 — downloads manager and privacy controls.
-- 1.0.0 — platform-specific installers and release automation.
+- 1.0.0 — signed installers, update mechanism and broader platform validation.
