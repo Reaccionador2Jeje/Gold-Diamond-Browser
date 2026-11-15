@@ -16,7 +16,7 @@ def main() -> int:
         "--collect-all", "shiboken6",
         "--collect-all", "memingo",
         "--add-data", f"main.mgo{separator}.",
-        "--add-data", f"src{separator}src",
+        "--add-data", f"ecosystem{separator}ecosystem",
         "run.py",
     ]
     return subprocess.call(command)
