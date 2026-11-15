@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
     QTabWidget, QToolBar, QVBoxLayout, QWidget,
 )
-from PySide6.QtWebEngineCore import QWebEngineDownloadRequest
+from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from .memingo_bridge import (
@@ -103,6 +103,9 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Go", "Open address", self.navigate, "Return")
         self._action(toolbar, "＋", "New tab", self.new_tab, "Ctrl+T")
         self._action(toolbar, "Find", "Find text on this page", self.toggle_find, "Ctrl+F")
+        self._action(toolbar, "−", "Zoom out", lambda: self.change_zoom(-0.1), "Ctrl+-")
+        self._action(toolbar, "+", "Zoom in", lambda: self.change_zoom(0.1), "Ctrl++")
+        self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
 
         self.progress = QProgressBar()
@@ -158,7 +161,8 @@ class GoldDiamondWindow(QMainWindow):
         file_menu = bar.addMenu("File")
         self._menu_action(file_menu, "New tab", self.new_tab, "Ctrl+T")
         self._menu_action(file_menu, "Close tab", self.close_current_tab, "Ctrl+W")
-        self._menu_action(file_menu, "New private window", self.private_window)
+        self._menu_action(file_menu, "New private tab", self.private_window, "Ctrl+Shift+N")
+        self._menu_action(file_menu, "Save page as PDF", self.save_page_pdf)
         file_menu.addSeparator()
         self._menu_action(file_menu, "Quit", self.close, "Ctrl+Q")
 
@@ -177,13 +181,13 @@ class GoldDiamondWindow(QMainWindow):
         tools_menu = bar.addMenu("Tools")
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
+        self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
 
         help_menu = bar.addMenu("Help")
         self._menu_action(help_menu, "About Gold & Diamond", self.show_about)
 
     def _register_shortcuts(self):
-        self._shortcut("Ctrl+Shift+N", self.private_window)
         self._shortcut("Ctrl+Shift+R", self.reload_page)
         self._shortcut("Escape", self.close_find)
 
@@ -214,8 +218,13 @@ class GoldDiamondWindow(QMainWindow):
         widget = self.tabs.currentWidget()
         return widget if isinstance(widget, QWebEngineView) else None
 
-    def new_tab(self, url: str | None = None):
+    def new_tab(self, url: str | None = None, private: bool = False):
         view = QWebEngineView()
+        view.setProperty("private_mode", private)
+        if private:
+            private_profile = QWebEngineProfile(self)
+            private_page = QWebEnginePage(private_profile, view)
+            view.setPage(private_page)
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
@@ -276,10 +285,11 @@ class GoldDiamondWindow(QMainWindow):
     def page_loaded(self, ok: bool, browser: QWebEngineView):
         if browser is self.current_view():
             self.progress.hide()
-            self.security_label.setText("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY")
+            mode = "  PRIVATE" if browser.property("private_mode") else ""
+            self.security_label.setText(("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY") + mode)
         self.status.showMessage("Page loaded" if ok else "Page could not be loaded", 4000)
         url = browser.url().toString()
-        if ok and url.startswith(("https://", "http://")):
+        if ok and url.startswith(("https://", "http://")) and not browser.property("private_mode"):
             try:
                 record_history(url, browser.title() or url)
             except Exception as exc:
@@ -450,10 +460,19 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("Startup page saved", 4000)
 
     def private_window(self):
-        QMessageBox.information(
-            self, "Private browsing",
-            "Private browsing is planned for a future release. This build does not yet provide an isolated private profile.",
+        self.new_tab(private=True)
+        self.status.showMessage("Private tab opened — browsing history is not recorded", 5000)
+
+    def save_page_pdf(self):
+        view = self.current_view()
+        if not view:
+            return
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Save page as PDF", str(Path.home() / "Downloads" / "webpage.pdf"), "PDF files (*.pdf)"
         )
+        if filename:
+            view.page().printToPdf(filename)
+            self.status.showMessage("Preparing PDF export…", 4000)
 
     def toggle_fullscreen(self):
         self.showNormal() if self.isFullScreen() else self.showFullScreen()
