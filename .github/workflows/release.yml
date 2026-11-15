@@ -1,0 +1,152 @@
+name: Build installers and publish release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build \${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-22.04
+          - name: macOS
+            os: macos-14
+    runs-on: \${{ matrix.os }}
+
+    steps:
+      - name: Check out browser
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Memingo runtime
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/Reaccionador2Jeje/Memingo.git ../Memingo
+          python -m pip install --upgrade pip
+          python -m pip install -e ../Memingo
+          python -m pip install -r requirements.txt pyinstaller
+
+      - name: Build application bundle
+        run: >
+          pyinstaller --noconfirm --clean --windowed --onedir
+          --name GoldDiamondBrowser
+          --collect-all PySide6
+          --collect-all shiboken6
+          --collect-all memingo
+          --add-data "main.mgo:."
+          --add-data "src:src"
+          run.py
+
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup --yes --no-progress
+          $iscc = "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe"
+          & $iscc packaging/windows/installer.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build Linux DEB and RPM packages
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
+          mkdir -p package-root/opt/gold-diamond-browser
+          mkdir -p package-root/usr/bin package-root/usr/share/applications
+          cp -a dist/GoldDiamondBrowser/. package-root/opt/gold-diamond-browser/
+          cat > package-root/usr/bin/gold-diamond-browser <<'EOF'
+          #!/bin/sh
+          exec /opt/gold-diamond-browser/GoldDiamondBrowser "$@"
+          EOF
+          chmod 755 package-root/usr/bin/gold-diamond-browser
+          cat > package-root/usr/share/applications/gold-diamond-browser.desktop <<'EOF'
+          [Desktop Entry]
+          Name=Gold & Diamond Browser
+          Comment=Browse the web with Gold & Diamond Browser
+          Exec=gold-diamond-browser %U
+          Terminal=false
+          Type=Application
+          Categories=Network;WebBrowser;
+          StartupNotify=true
+          EOF
+          fpm -s dir -t deb -C package-root -n gold-diamond-browser -v 0.1.0 --architecture amd64 --description "Gold & Diamond Browser desktop web browser" opt usr
+          fpm -s dir -t rpm -C package-root -n gold-diamond-browser -v 0.1.0 --architecture x86_64 --description "Gold & Diamond Browser desktop web browser" opt usr
+
+      - name: Build macOS DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "Gold & Diamond Browser 0.1.0" \
+            --window-size 700 450 \
+            --app-drop-link 520 220 \
+            "Gold-Diamond-Browser-0.1.0.dmg" \
+            "dist/GoldDiamondBrowser.app"
+
+      - name: Collect Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-files | Out-Null
+          Copy-Item "dist/Gold-Diamond-Browser-Setup-0.1.0.exe" release-files/
+
+      - name: Collect Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p release-files
+          mv ./*.deb ./*.rpm release-files/
+
+      - name: Collect macOS installer
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p release-files
+          mv Gold-Diamond-Browser-0.1.0.dmg release-files/
+
+      - name: Upload platform installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-\${{ runner.os }}
+          path: release-files/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: release-files
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: \${{ github.ref_name }}
+          name: Gold & Diamond Browser \${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: release-files/*
