@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (for example 0.5.0)"
+        required: true
+        default: "0.5.0"
 
 permissions:
   contents: write
@@ -29,7 +35,9 @@ jobs:
 
       - name: Set release version
         shell: bash
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="${{ inputs.version }}"; fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Set up Python
         uses: actions/setup-python@v5
