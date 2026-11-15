@@ -1,12 +1,21 @@
-# Gold & Diamond Browser — bookmark collection
+# Gold & Diamond Browser — profile-scoped bookmark collection
 # The collection and its persistence rules are owned by Memingo.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe storage_path = "data/bookmarks.json"
+vibe profile_id = request.profile_id
+when profile_id == "" {
+    profile_id = "default"
+}
+vibe storage_path = "data/bookmarks-" + profile_id + ".json"
+vibe legacy_path = "data/bookmarks.json"
 vibe bookmarks = []
 
 when file_exists(storage_path) {
     bookmarks = json_parse(read_file(storage_path))
+} else {
+    when profile_id == "default" && file_exists(legacy_path) {
+        bookmarks = json_parse(read_file(legacy_path))
+    }
 }
 
 when request.action == "add" {
@@ -34,4 +43,4 @@ when request.action == "clear" {
     write_file(storage_path, json_stringify(bookmarks))
 }
 
-spill json_stringify({bookmarks: bookmarks})
+spill json_stringify({bookmarks: bookmarks, profile_id: profile_id})
