@@ -31,6 +31,7 @@ class GoldDiamondWindow(QMainWindow):
         self.theme = config["theme"]
         self.settings = load_settings()
         self._download_connections = set()
+        self.download_items = []
         self.setWindowTitle(f'{config["name"]}  ◆  {config["version"]}')
         self.setWindowIconText("G◆D")
         window = config.get("window", {})
@@ -389,7 +390,7 @@ class GoldDiamondWindow(QMainWindow):
         elif row == 2:
             self.show_history()
         elif row == 3:
-            self.status.showMessage("Downloads are saved to your Downloads folder", 5000)
+            self.show_downloads()
 
     def toggle_find(self):
         if not hasattr(self, "find_bar"):
@@ -440,10 +441,34 @@ class GoldDiamondWindow(QMainWindow):
         download.setDownloadDirectory(str(target.parent))
         download.setDownloadFileName(target.name)
         download.accept()
+        self.download_items.append({"name": suggested, "path": str(target), "state": "Downloading"})
         self.status.showMessage(f"Downloading: {suggested}", 5000)
         download.isFinishedChanged.connect(
-            lambda: self.status.showMessage(f"Download finished: {suggested}", 6000)
+            lambda item=download, name=suggested: self.download_finished(item, name)
         )
+
+    def download_finished(self, download, name: str):
+        state = "Completed" if download.state() == QWebEngineDownloadRequest.DownloadState.DownloadCompleted else "Failed"
+        for item in reversed(self.download_items):
+            if item["name"] == name and item["state"] == "Downloading":
+                item["state"] = state
+                break
+        self.status.showMessage(f"{name}: {state.lower()}", 5000)
+
+    def show_downloads(self):
+        menu = QMenu("Downloads", self)
+        if not self.download_items:
+            empty = menu.addAction("No downloads in this session")
+            empty.setEnabled(False)
+        for item in reversed(self.download_items):
+            action = menu.addAction(f'{item["state"]}  ·  {item["name"][:45]}')
+            action.setToolTip(item["path"])
+            action.triggered.connect(lambda checked=False, path=item["path"]: self.open_download_folder(path))
+        menu.exec(self.mapToGlobal(self.rect().center()))
+
+    def open_download_folder(self, path: str):
+        from PySide6.QtGui import QDesktopServices
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).parent)))
 
     def clear_browsing_history(self):
         answer = QMessageBox.question(self, "Clear history", "Delete all recorded browsing history?")
