@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
-    QApplication, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QApplication, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QInputDialog,
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
     QTabWidget, QToolBar, QVBoxLayout, QWidget,
 )
@@ -101,6 +101,8 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Translate", "Translate the current page", self.translate_page)
         self._action(toolbar, "Capture", "Save a screenshot of this page", self.save_screenshot)
         self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
+        self._action(toolbar, "Mute", "Mute or unmute this tab", self.toggle_tab_audio)
+        self._action(toolbar, "Tabs", "Find and switch tabs", self.find_tab, "Ctrl+Shift+A")
         self._action(toolbar, "Ask AI", "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._action(toolbar, "Settings", "Configure Gold & Diamond Browser", self.show_settings)
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
@@ -181,6 +183,12 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._menu_action(tools_menu, "Browser Ecosystem · Profiles · Extensions · Privacy", self.show_ecosystem_manager)
         self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab)
+        self._menu_action(tools_menu, "Find tab…", self.find_tab, "Ctrl+Shift+A")
+        self._menu_action(tools_menu, "Mute / unmute current tab", self.toggle_tab_audio)
+        self._menu_action(tools_menu, "Copy current page address", self.copy_current_url, "Ctrl+Shift+C")
+        self._menu_action(tools_menu, "Save page HTML…", self.save_page_html)
+        self._menu_action(tools_menu, "Copy page text", self.copy_page_text)
+        self._menu_action(tools_menu, "Close tabs to the right", self.close_tabs_to_right)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
         for theme_name, label in (("graphite", "Graphite Gold"), ("midnight", "Midnight Blue"), ("pearl", "Pearl Light")):
@@ -659,6 +667,79 @@ class GoldDiamondWindow(QMainWindow):
         for index in reversed(range(self.tabs.count())):
             if index != keep_index:
                 self.close_tab(index)
+
+    def close_tabs_to_right(self):
+        current = self.tabs.currentIndex()
+        if current < 0:
+            return
+        for index in reversed(range(current + 1, self.tabs.count())):
+            self.close_tab(index)
+        self.status.showMessage("Tabs to the right closed", 3000)
+
+    def find_tab(self):
+        entries = []
+        for index in range(self.tabs.count()):
+            view = self.tabs.widget(index)
+            if isinstance(view, QWebEngineView):
+                title = view.title() or "New tab"
+                host = view.url().host()
+                label = f"{index + 1}. {title[:55]}" + (f" — {host}" if host else "")
+                entries.append((label, index))
+        if not entries:
+            return
+        labels = [label for label, _ in entries]
+        selected, accepted = QInputDialog.getItem(
+            self, "Tab switcher", "Find or select an open tab:", labels, self.tabs.currentIndex(), False
+        )
+        if accepted:
+            for label, index in entries:
+                if label == selected:
+                    self.tabs.setCurrentIndex(index)
+                    break
+
+    def toggle_tab_audio(self):
+        view = self.current_view()
+        if not view:
+            return
+        muted = not view.page().isAudioMuted()
+        view.page().setAudioMuted(muted)
+        self.status.showMessage("Tab muted" if muted else "Tab audio enabled", 3000)
+
+    def copy_current_url(self):
+        view = self.current_view()
+        if not view:
+            return
+        url = view.url().toString()
+        if url.startswith(("https://", "http://")):
+            QApplication.clipboard().setText(url)
+            self.status.showMessage("Page address copied", 2500)
+
+    def save_page_html(self):
+        view = self.current_view()
+        if not view:
+            return
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Save page HTML", str(Path.home() / "Downloads" / "webpage.html"),
+            "HTML files (*.html)"
+        )
+        if not filename:
+            return
+        def write_html(source):
+            try:
+                Path(filename).write_text(source or "", encoding="utf-8")
+                self.status.showMessage(f"HTML saved: {filename}", 5000)
+            except OSError as exc:
+                QMessageBox.warning(self, "Save page HTML", str(exc))
+        view.page().toHtml(write_html)
+
+    def copy_page_text(self):
+        view = self.current_view()
+        if not view:
+            return
+        def copy_text(value):
+            QApplication.clipboard().setText(value or "")
+            self.status.showMessage("Page text copied", 2500)
+        view.page().runJavaScript("document.body ? document.body.innerText : ''", copy_text)
 
     def reopen_closed_tab(self):
         if not self.closed_tabs:
