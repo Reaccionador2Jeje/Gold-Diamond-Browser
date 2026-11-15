@@ -221,8 +221,6 @@ class GoldDiamondWindow(QMainWindow):
         self._shortcut("Ctrl+Shift+T", self.reopen_closed_tab)
         self._shortcut("Ctrl+J", self.show_downloads)
         self._shortcut("Ctrl+Shift+E", self.toggle_reader_mode)
-        self._shortcut("Ctrl+Shift+V", self.toggle_split_view)
-        self._shortcut("Ctrl+Shift+W", self.save_current_workspace)
 
     def _action(self, toolbar, label, tooltip, callback, shortcut=None):
         action = QAction(label, self)
