@@ -101,6 +101,12 @@ def add_bookmark(url: str, title: str) -> list[dict[str, Any]]:
     ).get("bookmarks", [])
 
 
+def remove_bookmark(url: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "bookmarks.mgo", {"action": "remove", "url": url}
+    ).get("bookmarks", [])
+
+
 def record_history(url: str, title: str) -> list[dict[str, Any]]:
     return _run_data_module(
         "history.mgo", {"action": "add", "url": url, "title": title}
