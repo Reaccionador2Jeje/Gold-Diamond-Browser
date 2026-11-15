@@ -144,3 +144,19 @@ def resolve_url(value: str, search_engine: str | None = None) -> str:
     if not isinstance(url, str) or not url.startswith(("https://", "http://")):
         raise RuntimeError("Memingo returned an invalid navigation URL")
     return url
+
+
+def list_reading_list() -> list[dict[str, Any]]:
+    return _run_data_module("reading_list.mgo", {"action": "list"}).get("items", [])
+
+
+def add_reading_item(url: str, title: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "reading_list.mgo", {"action": "add", "url": url, "title": title}
+    ).get("items", [])
+
+
+def remove_reading_item(url: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "reading_list.mgo", {"action": "remove", "url": url}
+    ).get("items", [])
