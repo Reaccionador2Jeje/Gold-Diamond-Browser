@@ -21,5 +21,7 @@ jobs:
           git clone --depth 1 https://github.com/Reaccionador2Jeje/Memingo.git ../Memingo
           python -m pip install --upgrade pip
           python -m pip install -e ../Memingo
+      - name: Check Python host syntax
+        run: python -m compileall -q browser run.py packaging
       - name: Run browser and Memingo integration tests
         run: python -m unittest discover -s tests -v
