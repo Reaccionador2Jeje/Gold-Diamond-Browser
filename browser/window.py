@@ -335,14 +335,23 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage(f"Navigation error: {exc}", 6000)
 
     def navigate_to(self, url: str):
-        if self.current_view():
-            if url.rstrip("/") == "https://gold-diamond.local":
-                self.current_view().setProperty("internal_home", True)
-                self.current_view().setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
-                self.address.setText("gold-diamond.local")
-            else:
-                self.current_view().setProperty("internal_home", False)
-                self.current_view().setUrl(QUrl(url))
+        view = self.current_view()
+        if view is None:
+            return
+        if not isinstance(url, str):
+            self.status.showMessage("Invalid navigation address", 3500)
+            return
+        if url.rstrip("/") == "https://gold-diamond.local":
+            view.setProperty("internal_home", True)
+            view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
+            self.address.setText("gold-diamond.local")
+            return
+        target = QUrl(url)
+        if target.scheme() not in {"http", "https"} or not target.host():
+            self.status.showMessage("Only HTTP and HTTPS addresses can be opened", 3500)
+            return
+        view.setProperty("internal_home", False)
+        view.setUrl(target)
 
     def load_started(self):
         self.progress.setValue(0)
@@ -397,31 +406,43 @@ class GoldDiamondWindow(QMainWindow):
 
     def _saved_menu(self, entries: list[dict], empty: str, title: str):
         profile_id = self.current_profile_id()
+        safe_entries = []
+        for item in entries if isinstance(entries, list) else []:
+            if not isinstance(item, dict):
+                continue
+            url = item.get("url")
+            if not isinstance(url, str) or not url.startswith(("https://", "http://")):
+                continue
+            label = item.get("title")
+            safe_entries.append((url, label if isinstance(label, str) and label else url))
         menu = QMenu(title, self)
-        if not entries:
+        if not safe_entries:
             disabled = menu.addAction(empty)
             disabled.setEnabled(False)
-        for item in reversed(entries):
-            url = item.get("url", "")
-            label = item.get("title") or url
-            if url:
-                item_menu = menu.addMenu(label[:45])
-                open_action = item_menu.addAction("Open")
-                open_action.triggered.connect(lambda checked=False, target=url: self.navigate_to(target))
-                remove_action = item_menu.addAction("Remove bookmark")
-                remove_action.triggered.connect(
-                    lambda checked=False, target=url, owner=profile_id:
-                        self.remove_saved_bookmark(target, owner)
-                )
+        for url, label in reversed(safe_entries):
+            item_menu = menu.addMenu(label[:45])
+            open_action = item_menu.addAction("Open")
+            open_action.triggered.connect(lambda checked=False, target=url: self.navigate_to(target))
+            remove_action = item_menu.addAction("Remove bookmark")
+            remove_action.triggered.connect(
+                lambda checked=False, target=url, owner=profile_id:
+                    self.remove_saved_bookmark(target, owner)
+            )
         menu.addSeparator()
         menu.addAction("Open library sidebar", self.toggle_sidebar)
         menu.exec(self.mapToGlobal(self.rect().center()))
 
     def show_bookmarks(self):
-        self._saved_menu(list_bookmarks(self.current_profile_id()), "No bookmarks saved yet", "Your bookmarks")
+        try:
+            self._saved_menu(list_bookmarks(self.current_profile_id()), "No bookmarks saved yet", "Your bookmarks")
+        except Exception as exc:
+            self.status.showMessage(f"Could not load bookmarks: {exc}", 5000)
 
     def show_history(self):
-        self._saved_menu(list_history(self.current_profile_id()), "No browsing history yet", "Recently visited")
+        try:
+            self._saved_menu(list_history(self.current_profile_id()), "No browsing history yet", "Recently visited")
+        except Exception as exc:
+            self.status.showMessage(f"Could not load history: {exc}", 5000)
 
     def save_to_reading_list(self):
         view = self.current_view()
@@ -447,11 +468,17 @@ class GoldDiamondWindow(QMainWindow):
         if not entries:
             empty = menu.addAction("No saved pages yet")
             empty.setEnabled(False)
-        for item in reversed(entries):
-            url = item.get("url", "")
-            if not url:
-                continue
-            submenu = menu.addMenu((item.get("title") or url)[:48])
+        safe_entries = [
+            item for item in entries
+            if isinstance(item, dict)
+            and isinstance(item.get("url"), str)
+            and item["url"].startswith(("https://", "http://"))
+        ]
+        for item in reversed(safe_entries):
+            url = item["url"]
+            title = item.get("title")
+            label = title if isinstance(title, str) and title else url
+            submenu = menu.addMenu(label[:48])
             submenu.addAction("Open page", lambda target=url: self.navigate_to(target))
             submenu.addAction("Remove from Reading List", lambda target=url: self.remove_reading_item_entry(target))
         menu.addSeparator()
@@ -729,10 +756,13 @@ class GoldDiamondWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).parent)))
 
     def clear_browsing_history(self):
-        answer = QMessageBox.question(self, "Clear history", "Delete all recorded browsing history?")
+        answer = QMessageBox.question(self, "Clear history", "Delete all recorded browsing history for this tab’s profile?")
         if answer == QMessageBox.StandardButton.Yes:
-            clear_history(self.current_profile_id())
-            self.status.showMessage("Browsing history cleared", 4000)
+            try:
+                clear_history(self.current_profile_id())
+                self.status.showMessage("Browsing history cleared", 4000)
+            except Exception as exc:
+                self.status.showMessage(f"Could not clear history: {exc}", 5000)
 
     def show_ecosystem_manager(self):
         dialog = EcosystemDialog(self)
@@ -988,8 +1018,11 @@ class GoldDiamondWindow(QMainWindow):
 
     def toggle_session_restore(self):
         enabled = not self.settings.get("restore_session", True)
-        self.settings = save_setting("restore_session", enabled)
-        self.status.showMessage("Session restore " + ("enabled" if enabled else "disabled"), 3500)
+        try:
+            self.settings = save_setting("restore_session", enabled)
+            self.status.showMessage("Session restore " + ("enabled" if enabled else "disabled"), 3500)
+        except Exception as exc:
+            self.status.showMessage(f"Could not update session settings: {exc}", 5000)
 
     def toggle_reader_mode(self):
         if 'reader' not in enabled_extensions():
@@ -1048,14 +1081,20 @@ class GoldDiamondWindow(QMainWindow):
                 self.status.showMessage("Screenshot could not be saved", 4000)
 
     def change_search(self, engine: str):
-        self.settings = save_setting("search_engine", engine)
-        self.status.showMessage("Search engine preference saved", 4000)
+        try:
+            self.settings = save_setting("search_engine", engine)
+            self.status.showMessage("Search engine preference saved", 4000)
+        except Exception as exc:
+            self.status.showMessage(f"Could not save search preference: {exc}", 5000)
 
     def set_startup_page(self):
         view = self.current_view()
         if view and view.url().scheme() in ("http", "https"):
-            self.settings = save_setting("startup_page", view.url().toString())
-            self.status.showMessage("Startup page saved", 4000)
+            try:
+                self.settings = save_setting("startup_page", view.url().toString())
+                self.status.showMessage("Startup page saved", 4000)
+            except Exception as exc:
+                self.status.showMessage(f"Could not save startup page: {exc}", 5000)
 
     def private_window(self):
         self.new_tab(private=True)
