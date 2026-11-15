@@ -75,6 +75,7 @@ const tick=()=>{{const d=new Date();document.getElementById('time').textContent=
 tick();setInterval(tick,1000);
 document.getElementById('search').addEventListener('submit',e=>{{e.preventDefault();const q=document.getElementById('query').value.trim();if(q)location.href=document.getElementById('search').dataset.searchUrl+encodeURIComponent(q)}});
 </script></body></html>"""
+    template = template.replace("{{", "{").replace("}}", "}")
     replacements = {
         "__GOLD__": gold, "__CYAN__": cyan, "__INK__": ink, "__MUTED__": muted,
         "__BG__": background, "__GLOW__": glow, "__GLASS__": glass, "__LINE__": line,
