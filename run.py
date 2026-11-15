@@ -15,7 +15,7 @@ def main() -> int:
     app.setApplicationName("Gold & Diamond Browser")
     app.setOrganizationName("AtDev Dev")
     bundle_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-    icon_path = bundle_root / "assets" / "gold-diamond-icon.png"
+    icon_path = bundle_root / "assets" / "gold-diamond-icon.svg"
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     try:
