@@ -2,14 +2,7 @@
 # The collection and its persistence rules are owned by Memingo.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe profile_id = request.profile_id
-when profile_id == "" {
-    profile_id = "default"
-}
-vibe storage_path = "data/bookmarks-" + profile_id + ".json"
-when profile_id == "default" {
-    storage_path = "data/bookmarks.json"
-}
+vibe storage_path = env("GDB_STORAGE_PATH", "data/bookmarks.json")
 vibe bookmarks = []
 
 when file_exists(storage_path) {
@@ -41,4 +34,4 @@ when request.action == "clear" {
     write_file(storage_path, json_stringify(bookmarks))
 }
 
-spill json_stringify({bookmarks: bookmarks, profile_id: profile_id})
+spill json_stringify({bookmarks: bookmarks})
