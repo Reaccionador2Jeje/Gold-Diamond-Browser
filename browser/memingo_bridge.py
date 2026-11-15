@@ -55,7 +55,7 @@ def _json_result(module: str, *, extra_env: dict[str, str] | None = None) -> dic
         raise RuntimeError(f"Memingo module {module} returned no result")
     result = json.loads(output[-1])
     if not isinstance(result, dict):
-        raise RuntimeError(f"Memingo module {module} must return a JSON object")
+        raise RuntimeError(f"Memingo data module {module} must return a JSON object")
     return result
 
 
@@ -160,3 +160,17 @@ def remove_reading_item(url: str) -> list[dict[str, Any]]:
     return _run_data_module(
         "reading_list.mgo", {"action": "remove", "url": url}
     ).get("items", [])
+
+
+def list_workspaces() -> list[dict[str, Any]]:
+    return _run_data_module("workspaces.mgo", {"action": "list"}).get("workspaces", [])
+
+
+def save_workspace(name: str, urls: list[str]) -> list[dict[str, Any]]:
+    clean_urls = [
+        url for url in urls
+        if isinstance(url, str) and url.startswith(("https://", "http://"))
+    ]
+    return _run_data_module(
+        "workspaces.mgo", {"action": "save", "name": name.strip(), "tabs": clean_urls}
+    ).get("workspaces", [])
