@@ -1,0 +1,33 @@
+# Gold & Diamond Browser — read-later collection
+# Memingo owns reading-list persistence and filtering.
+
+vibe request = json_parse(env("GDB_REQUEST", "{}"))
+vibe storage_path = "data/reading-list.json"
+vibe items = []
+
+when file_exists(storage_path) {
+    items = json_parse(read_file(storage_path))
+}
+
+when request.action == "add" {
+    when request.url != "" {
+        items = filter(items, keep_unique)
+        push(items, {
+            url: request.url,
+            title: request.title,
+            saved_at: now()
+        })
+        write_file(storage_path, json_stringify(items))
+    }
+}
+
+ritual keep_unique(item) {
+    drop item.url != request.url
+}
+
+when request.action == "remove" {
+    items = filter(items, keep_unique)
+    write_file(storage_path, json_stringify(items))
+}
+
+spill json_stringify({items: items})
