@@ -2,7 +2,7 @@
 
 **Gold & Diamond Browser** is a cross-platform desktop browser built with Memingo and Qt WebEngine (Chromium).
 
-## Version 0.2.0 — Premium experience
+## Version 0.4 development — Expanded experience
 
 - Real websites rendered with Qt WebEngine.
 - Browser configuration and address/search resolution are authored in Memingo.
@@ -14,7 +14,12 @@
 - In-page text search, adjustable zoom and PDF export.
 - Download tracking for the current session and quick access to the Downloads folder.
 - Search engine selection: Google, DuckDuckGo or Bing.
-- Three switchable interface themes: Graphite Gold, Midnight Blue and Pearl Light.
+- Four switchable interface themes: Graphite Gold, Midnight Blue, Pearl Light and Emerald Forest.
+- A modular UI package separates visual themes and the new-tab dashboard from the browser controller.
+- A redesigned new-tab experience with a live clock, date, search field, categorized shortcuts and a saved-bookmarks strip.
+- Tab context menu with duplicate, pin, close-other-tabs and reopen-closed-tab actions.
+- Reader mode, page translation, page screenshots and faster address-bar focus shortcuts.
+- Browser dashboard search follows the selected search engine.
 - Session restore: reopen regular tabs after restarting; private tabs are excluded.
 - Theme preferences and saved sessions are persisted by Memingo.
 - Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
@@ -31,7 +36,9 @@ Memingo is the primary application and policy language. New browser behavior sho
 - `ecosystem/bookmarks.mgo` owns bookmark storage and updates.
 - `ecosystem/history.mgo` owns visit recording and history storage.
 - `browser/memingo_bridge.py` is a narrow execution and serialization adapter.
-- `browser/window.py` is the native Qt host: widgets, Chromium WebEngine events and platform integration.
+- `browser/window.py` is the Qt browser controller and Chromium WebEngine integration.
+- `browser/ui/theme.py` contains reusable visual themes.
+- `browser/ui/dashboard.py` renders the branded new-tab dashboard.
 - `run.py` starts the desktop application.
 
 Python remains only where a native host is required: Qt WebEngine, desktop widgets, process startup, user data directory discovery and the Memingo runtime adapter. Browser policies and user-facing application rules belong in Memingo. The long-term goal is to reduce the host layer as Memingo gains suitable native bindings.
@@ -119,6 +126,10 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 | Ctrl+H | Show browsing history |
 | Ctrl+Shift+H | Set current page as startup page |
 | Ctrl+Shift+N | Open private tab |
+| Ctrl+Shift+T | Reopen closed tab |
+| Ctrl+Shift+E | Toggle reader mode |
+| Ctrl+L | Focus address bar |
+| Ctrl+J | Open downloads |
 | Ctrl+Shift+L | Toggle library sidebar |
 | Ctrl+F | Find text on page |
 | Ctrl++ / Ctrl+- | Zoom in / out |
@@ -130,5 +141,6 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 
 - 0.2.0 — Premium interface, dashboard, private tabs, downloads, PDF export and expanded Memingo-first features.
 - 0.3.0 — theme system, session restore and Memingo-managed browser preferences.
-- Future — extension framework, profiles and advanced privacy controls.
+- 0.4 development — modular UI, dashboard refresh, tab management and page tools.
+- Future — extension framework, profiles, sync and advanced privacy controls.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
