@@ -7,15 +7,13 @@ when profile_id == "" {
     profile_id = "default"
 }
 vibe storage_path = "data/history-" + profile_id + ".json"
-vibe legacy_path = "data/history.json"
+when profile_id == "default" {
+    storage_path = "data/history.json"
+}
 vibe entries = []
 
 when file_exists(storage_path) {
     entries = json_parse(read_file(storage_path))
-} else {
-    when profile_id == "default" && file_exists(legacy_path) {
-        entries = json_parse(read_file(legacy_path))
-    }
 }
 
 when request.action == "add" {
