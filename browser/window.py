@@ -295,7 +295,7 @@ class GoldDiamondWindow(QMainWindow):
 
     def start_page_html(self) -> str:
         try:
-            bookmarks = list_bookmarks()
+            bookmarks = list_bookmarks(self.active_profile_id)
         except Exception:
             bookmarks = []
         return build_dashboard(self.theme_name, bookmarks, self.settings.get('search_engine', 'https://www.google.com/search?q='))
@@ -344,7 +344,7 @@ class GoldDiamondWindow(QMainWindow):
         url = browser.url().toString()
         if ok and url.startswith(("https://", "http://")) and "gold-diamond.local" not in url and not browser.property("private_mode"):
             try:
-                record_history(url, browser.title() or url)
+                record_history(url, browser.title() or url, browser.property("gdb_profile_id") or "default")
             except Exception as exc:
                 self.status.showMessage(f"History error: {exc}", 5000)
 
@@ -397,10 +397,10 @@ class GoldDiamondWindow(QMainWindow):
         menu.exec(self.mapToGlobal(self.rect().center()))
 
     def show_bookmarks(self):
-        self._saved_menu(list_bookmarks(), "No bookmarks saved yet", "Your bookmarks")
+        self._saved_menu(list_bookmarks(self.active_profile_id), "No bookmarks saved yet", "Your bookmarks")
 
     def show_history(self):
-        self._saved_menu(list_history(), "No browsing history yet", "Recently visited")
+        self._saved_menu(list_history(self.active_profile_id), "No browsing history yet", "Recently visited")
 
     def save_to_reading_list(self):
         view = self.current_view()
@@ -536,6 +536,7 @@ class GoldDiamondWindow(QMainWindow):
 
         view = QWebEngineView()
         view.setProperty("private_mode", bool(source.property("private_mode")))
+        view.setProperty("gdb_profile_id", source.property("gdb_profile_id"))
         view.setProperty("internal_home", bool(source.property("internal_home")))
         view.setPage(QWebEnginePage(source.page().profile(), view))
         view.urlChanged.connect(lambda qurl, field=address: field.setText(qurl.toString()))
@@ -576,7 +577,7 @@ class GoldDiamondWindow(QMainWindow):
 
     def remove_saved_bookmark(self, url: str):
         try:
-            remove_bookmark(url)
+            remove_bookmark(url, self.active_profile_id)
             self.refresh_bookmark_bar()
             self.status.showMessage("Bookmark removed", 3500)
         except Exception as exc:
@@ -589,7 +590,7 @@ class GoldDiamondWindow(QMainWindow):
         title = self.bookmark_toolbar.addAction("◆  FAVORITES")
         title.setEnabled(False)
         try:
-            items = list_bookmarks()[-5:]
+            items = list_bookmarks(self.active_profile_id)[-5:]
         except Exception:
             items = []
         for item in items:
@@ -609,7 +610,7 @@ class GoldDiamondWindow(QMainWindow):
             self.status.showMessage("Open a website before bookmarking it", 4000)
             return
         try:
-            add_bookmark(url, view.title() or url)
+            add_bookmark(url, view.title() or url, self.active_profile_id)
             self.refresh_bookmark_bar()
             self.status.showMessage("★  Added to your library", 4000)
         except Exception as exc:
@@ -709,7 +710,7 @@ class GoldDiamondWindow(QMainWindow):
     def clear_browsing_history(self):
         answer = QMessageBox.question(self, "Clear history", "Delete all recorded browsing history?")
         if answer == QMessageBox.StandardButton.Yes:
-            clear_history()
+            clear_history(self.active_profile_id)
             self.status.showMessage("Browsing history cleared", 4000)
 
     def show_ecosystem_manager(self):
@@ -737,7 +738,7 @@ class GoldDiamondWindow(QMainWindow):
         profile.clearHttpCache()
         profile.cookieStore().deleteAllCookies()
         try:
-            clear_history()
+            clear_history(self.active_profile_id)
         except Exception:
             pass
         self.status.showMessage('Cache, cookies and local browsing history cleared', 5000)
