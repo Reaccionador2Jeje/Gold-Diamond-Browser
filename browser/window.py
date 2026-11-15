@@ -22,8 +22,9 @@ from .ui.settings_dialog import SettingsDialog
 from .ui.theme import build_stylesheet
 
 from .memingo_bridge import (
-    add_bookmark, clear_history, list_bookmarks, list_history, load_settings,
-    load_session, record_history, remove_bookmark, resolve_url, save_setting, save_session,
+    add_bookmark, add_reading_item, clear_history, list_bookmarks, list_history,
+    list_reading_list, load_settings, load_session, record_history, remove_bookmark,
+    remove_reading_item, resolve_url, save_setting, save_session,
 )
 
 
@@ -189,6 +190,8 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Save page HTML…", self.save_page_html)
         self._menu_action(tools_menu, "Copy page text", self.copy_page_text)
         self._menu_action(tools_menu, "Summarize this page with AI", self.summarize_page_with_ai)
+        self._menu_action(tools_menu, "Save to Reading List", self.save_to_reading_list, "Ctrl+Shift+S")
+        self._menu_action(tools_menu, "Open Reading List", self.show_reading_list, "Ctrl+Shift+R")
         self._menu_action(tools_menu, "Close tabs to the right", self.close_tabs_to_right)
         self._menu_action(tools_menu, "Duplicate current tab", lambda: self.duplicate_tab(self.tabs.currentIndex()))
         themes_menu = tools_menu.addMenu("Appearance")
@@ -200,7 +203,9 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(help_menu, "Credits & licenses", self.show_credits)
 
     def _register_shortcuts(self):
-        self._shortcut("Ctrl+Shift+R", self.reload_page)
+        self._shortcut("Ctrl+Shift+R", self.show_reading_list)
+        self._shortcut("Ctrl+R", self.reload_page)
+        self._shortcut("Ctrl+Shift+S", self.save_to_reading_list)
         self._shortcut("Escape", self.close_find)
         self._shortcut("Ctrl+L", self.focus_address)
         self._shortcut("Ctrl+Shift+T", self.reopen_closed_tab)
@@ -384,6 +389,48 @@ class GoldDiamondWindow(QMainWindow):
 
     def show_history(self):
         self._saved_menu(list_history(), "No browsing history yet", "Recently visited")
+
+    def save_to_reading_list(self):
+        view = self.current_view()
+        if not view:
+            return
+        url = view.url().toString()
+        if not url.startswith(("https://", "http://")):
+            self.status.showMessage("Open a website before saving it", 3500)
+            return
+        try:
+            add_reading_item(url, view.title() or url)
+            self.status.showMessage("Saved to Reading List · Ctrl+Shift+R to open", 4000)
+        except Exception as exc:
+            self.status.showMessage(f"Reading List error: {exc}", 5000)
+
+    def show_reading_list(self):
+        try:
+            entries = list_reading_list()
+        except Exception as exc:
+            self.status.showMessage(f"Could not load Reading List: {exc}", 5000)
+            return
+        menu = QMenu("Reading List · Read later", self)
+        if not entries:
+            empty = menu.addAction("No saved pages yet")
+            empty.setEnabled(False)
+        for item in reversed(entries):
+            url = item.get("url", "")
+            if not url:
+                continue
+            submenu = menu.addMenu((item.get("title") or url)[:48])
+            submenu.addAction("Open page", lambda target=url: self.navigate_to(target))
+            submenu.addAction("Remove from Reading List", lambda target=url: self.remove_reading_item_entry(target))
+        menu.addSeparator()
+        menu.addAction("Save current page", self.save_to_reading_list)
+        menu.exec(self.mapToGlobal(self.rect().center()))
+
+    def remove_reading_item_entry(self, url: str):
+        try:
+            remove_reading_item(url)
+            self.status.showMessage("Removed from Reading List", 3000)
+        except Exception as exc:
+            self.status.showMessage(f"Could not remove saved page: {exc}", 5000)
 
     def remove_saved_bookmark(self, url: str):
         try:
