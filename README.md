@@ -89,6 +89,27 @@ python -m pip install -r requirements.txt
 python run.py
 \`\`\`
 
+
+## Gold & Diamond AI setup
+
+Gold & Diamond AI supports chat-completions-compatible API providers. Configure the provider base URL and model in Tools → Browser settings → AI assistant. The API key is intentionally not stored in browser settings; set it in the environment before launching the browser:
+
+PowerShell:
+
+    $env:GDB_AI_API_KEY = "your-provider-api-key"
+    python run.py
+
+Linux / macOS:
+
+    export GDB_AI_API_KEY="your-provider-api-key"
+    python run.py
+
+Remote API providers must use HTTPS. Localhost HTTP endpoints are allowed for local AI servers. Provider usage may incur charges; check the provider's pricing and use an account only with the account owner's permission.
+
+## Credits and license
+
+Gold & Diamond Browser is created by **AtDev Dev** and distributed under the **Apache License 2.0** (see LICENSE). The browser uses Memingo and Qt WebEngine / Chromium; their respective projects and third-party components retain their own licenses and trademarks.
+
 ## Installers
 
 The release workflow builds these packages on native GitHub-hosted runners:
