@@ -223,6 +223,7 @@ class GoldDiamondWindow(QMainWindow):
     def new_tab(self, url: str | None = None, private: bool = False):
         view = QWebEngineView()
         view.setProperty("private_mode", private)
+        view.setProperty("internal_home", False)
         if private:
             private_profile = QWebEngineProfile(self)
             private_page = QWebEnginePage(private_profile, view)
@@ -240,6 +241,7 @@ class GoldDiamondWindow(QMainWindow):
             profile.downloadRequested.connect(self.handle_download)
             self._download_connections.add(id(profile))
         if not url or url.rstrip("/") == "https://gold-diamond.local":
+            view.setProperty("internal_home", True)
             view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
             self.address.setText("gold-diamond.local")
         else:
@@ -259,12 +261,14 @@ class GoldDiamondWindow(QMainWindow):
             if typed in {"gold-diamond.local", "https://gold-diamond.local", "http://gold-diamond.local"}:
                 view = self.current_view()
                 if view:
+                    view.setProperty("internal_home", True)
                     view.setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
                     self.address.setText("gold-diamond.local")
                 return
             url = resolve_url(self.address.text(), self.settings.get("search_engine"))
             view = self.current_view()
             if view:
+                view.setProperty("internal_home", False)
                 view.setUrl(QUrl(url))
         except Exception as exc:
             self.status.showMessage(f"Navigation error: {exc}", 6000)
@@ -272,9 +276,11 @@ class GoldDiamondWindow(QMainWindow):
     def navigate_to(self, url: str):
         if self.current_view():
             if url.rstrip("/") == "https://gold-diamond.local":
+                self.current_view().setProperty("internal_home", True)
                 self.current_view().setHtml(self.start_page_html(), QUrl("https://gold-diamond.local/"))
                 self.address.setText("gold-diamond.local")
             else:
+                self.current_view().setProperty("internal_home", False)
                 self.current_view().setUrl(QUrl(url))
 
     def load_started(self):
@@ -287,7 +293,7 @@ class GoldDiamondWindow(QMainWindow):
             self.progress.hide()
             mode = "  PRIVATE" if browser.property("private_mode") else ""
             host = browser.url().host().lower()
-            state = "◆  HOME" if host == "gold-diamond.local" else ("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY")
+            state = "◆  HOME" if browser.property("internal_home") or host == "gold-diamond.local" else ("◆  SECURE" if browser.url().scheme() == "https" else "◇  READY")
             self.security_label.setText(state + mode)
         self.status.showMessage("Page loaded" if ok else "Page could not be loaded", 4000)
         url = browser.url().toString()
@@ -298,8 +304,12 @@ class GoldDiamondWindow(QMainWindow):
                 self.status.showMessage(f"History error: {exc}", 5000)
 
     def update_address(self, qurl: QUrl, browser: QWebEngineView):
+        if qurl.host().lower() == "gold-diamond.local":
+            browser.setProperty("internal_home", True)
+        elif qurl.scheme() not in {"", "about"}:
+            browser.setProperty("internal_home", False)
         if browser is self.current_view():
-            self.address.setText("gold-diamond.local" if qurl.host().lower() == "gold-diamond.local" else qurl.toString())
+            self.address.setText("gold-diamond.local" if browser.property("internal_home") else qurl.toString())
 
     def update_title(self, title: str, browser: QWebEngineView):
         index = self.tabs.indexOf(browser)
@@ -316,7 +326,7 @@ class GoldDiamondWindow(QMainWindow):
 
     def sync_address(self, _index: int):
         view = self.current_view()
-        if view and view.url().host().lower() == "gold-diamond.local":
+        if view and (view.property("internal_home") or view.url().host().lower() == "gold-diamond.local"):
             self.address.setText("gold-diamond.local")
         elif view and view.url().scheme() in ("http", "https"):
             self.address.setText(view.url().toString())
