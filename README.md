@@ -2,13 +2,19 @@
 
 **Gold & Diamond Browser** is a cross-platform desktop browser built with Memingo and Qt WebEngine (Chromium).
 
-## Version 0.1.0
+## Version 0.2.0 — Premium experience
 
 - Real websites rendered with Qt WebEngine.
 - Browser configuration and address/search resolution are authored in Memingo.
 - Back, forward, reload and home controls.
 - Multiple tabs, close/reorder tabs and keyboard shortcuts.
-- Memingo-managed bookmarks and browsing history, with toolbar menus.
+- A redesigned graphite-and-gold interface with a branded start dashboard and quick-launch tiles.
+- Dedicated favorites toolbar and slide-out library sidebar.
+- Isolated private tabs that do not write visits to the browser's local history.
+- In-page text search, adjustable zoom and PDF export.
+- Download tracking for the current session and quick access to the Downloads folder.
+- Search engine selection: Google, DuckDuckGo or Bing.
+- Memingo-managed bookmarks and browsing history, with add/remove and clear-history actions.
 - Dark graphite UI with gold and diamond accents.
 - Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
 
@@ -109,9 +115,16 @@ Packages are not code-signed or notarized yet. Windows SmartScreen and macOS Gat
 | Ctrl+Shift+B | Show bookmarks |
 | Ctrl+H | Show browsing history |
 | Ctrl+Shift+H | Set current page as startup page |
+| Ctrl+Shift+N | Open private tab |
+| Ctrl+Shift+L | Toggle library sidebar |
+| Ctrl+F | Find text on page |
+| Ctrl++ / Ctrl+- | Zoom in / out |
+| Ctrl+0 | Reset zoom |
+| F11 | Fullscreen |
+| Ctrl+Q | Quit |
 
 ## Roadmap
 
-- 0.2.0 — Memingo-first architecture, persistent settings, bookmarks and browsing history.
-- 0.3.0 — downloads manager and privacy controls.
+- 0.2.0 — Premium interface, dashboard, private tabs, downloads, PDF export and expanded Memingo-first features.
+- 0.3.0 — extension framework, session restore, profiles and advanced privacy controls.
 - 1.0.0 — signed installers, update mechanism and broader platform validation.
