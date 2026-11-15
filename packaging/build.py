@@ -60,7 +60,7 @@ def create_icon_files() -> None:
             0 if size == 256 else size, 0, 0, 1, 32, len(data), offset,
         ))
         offset += len(data)
-    (ASSETS / "gold-diamond-icon.ico").write_bytes(directory + b"".join(images))
+    (ASSETS / "gold-diamond-icon.ico").write_bytes(directory + b"".join(images))\n\n    if sys.platform == "darwin":\n        iconset = ASSETS / "gold-diamond.iconset"\n        iconset.mkdir(exist_ok=True)\n        for name, size in (("icon_16x16.png", 16), ("icon_16x16@2x.png", 32), ("icon_32x32.png", 32), ("icon_32x32@2x.png", 64), ("icon_128x128.png", 128), ("icon_128x128@2x.png", 256), ("icon_256x256.png", 256), ("icon_256x256@2x.png", 512), ("icon_512x512.png", 512), ("icon_512x512@2x.png", 1024)):\n            image = QImage(size, size, QImage.Format.Format_ARGB32)\n            image.fill(Qt.GlobalColor.transparent)\n            painter = QPainter(image)\n            renderer.render(painter)\n            painter.end()\n            image.save(str(iconset / name), "PNG")\n        subprocess.run(["iconutil", "-c", "icns", str(iconset), "-o", str(ASSETS / "gold-diamond-icon.icns")], check=True)
 
 
 def main() -> int:
@@ -70,7 +70,7 @@ def main() -> int:
         sys.executable, "-m", "PyInstaller",
         "--noconfirm", "--clean", "--windowed", "--onedir",
         "--name", "GoldDiamondBrowser",
-        "--icon", str(ASSETS / "gold-diamond-icon.ico"),
+        "--icon", str(ASSETS / ("gold-diamond-icon.icns" if sys.platform == "darwin" else "gold-diamond-icon.ico")),
         "--collect-all", "PySide6",
         "--collect-all", "shiboken6",
         "--collect-all", "memingo",
