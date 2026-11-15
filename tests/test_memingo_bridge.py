@@ -33,7 +33,15 @@ class MemingoBrowserTests(unittest.TestCase):
         settings = save_setting("startup_page", "https://example.com")
         self.assertEqual(settings["startup_page"], "https://example.com")
 
-    def test_session_is_saved_and_restored_by_memingo(self):\n        save_session(["https://example.com", "not-a-url"])\n        self.assertEqual(load_session(), ["https://example.com"])\n\n    def test_theme_preference_is_persisted(self):\n        settings = save_setting("theme", "midnight")\n        self.assertEqual(settings["theme"], "midnight")\n\n    def test_bookmarks_are_managed_by_memingo(self):
+    def test_session_is_saved_and_restored_by_memingo(self):
+        save_session(["https://example.com", "not-a-url"])
+        self.assertEqual(load_session(), ["https://example.com"])
+
+    def test_theme_preference_is_persisted(self):
+        settings = save_setting("theme", "midnight")
+        self.assertEqual(settings["theme"], "midnight")
+
+    def test_bookmarks_are_managed_by_memingo(self):
         add_bookmark("https://example.com", "Example")
         self.assertTrue(any(item["url"] == "https://example.com" for item in list_bookmarks()))
         remove_bookmark("https://example.com")
