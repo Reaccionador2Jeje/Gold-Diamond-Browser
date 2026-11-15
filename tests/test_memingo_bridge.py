@@ -35,8 +35,14 @@ class MemingoBrowserTests(unittest.TestCase):
         self.assertEqual(settings["startup_page"], "https://example.com")
 
     def test_session_is_saved_and_restored_by_memingo(self):
-        save_session(["https://example.com", "not-a-url"])
-        self.assertEqual(load_session(), ["https://example.com"])
+        save_session(["https://example.com", "not-a-url"], "default")
+        self.assertEqual(load_session("default"), ["https://example.com"])
+
+    def test_sessions_are_isolated_between_profiles(self):
+        save_session(["https://personal.example"], "default")
+        save_session(["https://work.example"], "work")
+        self.assertEqual(load_session("default"), ["https://personal.example"])
+        self.assertEqual(load_session("work"), ["https://work.example"])
 
     def test_theme_preference_is_persisted(self):
         settings = save_setting("theme", "midnight")
