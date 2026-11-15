@@ -1,12 +1,21 @@
-# Gold & Diamond Browser — saved browsing sessions
+# Gold & Diamond Browser — profile-scoped saved browsing sessions
 # Memingo owns session persistence. Private tabs are filtered by the Qt host.
 
 vibe request = json_parse(env("GDB_REQUEST", "{}"))
-vibe storage_path = "data/session.json"
+vibe profile_id = request.profile_id
+when profile_id == "" {
+    profile_id = "default"
+}
+vibe storage_path = "data/session-" + profile_id + ".json"
+vibe legacy_path = "data/session.json"
 vibe tabs = []
 
 when file_exists(storage_path) {
     tabs = json_parse(read_file(storage_path))
+} else {
+    when profile_id == "default" && file_exists(legacy_path) {
+        tabs = json_parse(read_file(legacy_path))
+    }
 }
 
 when request.action == "save" {
@@ -14,4 +23,4 @@ when request.action == "save" {
     write_file(storage_path, json_stringify(tabs))
 }
 
-spill json_stringify({tabs: tabs})
+spill json_stringify({tabs: tabs, profile_id: profile_id})
