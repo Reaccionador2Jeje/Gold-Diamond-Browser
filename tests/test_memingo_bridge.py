@@ -5,8 +5,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from browser.memingo_bridge import (
-    add_bookmark, clear_history, list_bookmarks, load_config, load_settings,
-    load_session, list_history, record_history, remove_bookmark, resolve_url, save_setting, save_session,
+    add_bookmark, add_reading_item, clear_history, list_bookmarks, list_reading_list,
+    load_config, load_settings, load_session, list_history, record_history,
+    remove_bookmark, remove_reading_item, resolve_url, save_setting, save_session,
     list_workspaces, save_workspace,
 )
 
@@ -70,6 +71,20 @@ class MemingoBrowserTests(unittest.TestCase):
         record_history("https://work.example", "Work", "work")
         self.assertEqual([item["url"] for item in list_history("default")], ["https://personal.example"])
         self.assertEqual([item["url"] for item in list_history("work")], ["https://work.example"])
+
+    def test_reading_list_deduplicates_and_removes_items(self):
+        add_reading_item("https://read.example", "Read me")
+        add_reading_item("https://keep.example", "Keep me")
+        add_reading_item("https://read.example", "Updated title")
+        items = list_reading_list()
+        self.assertEqual([item["url"] for item in items], [
+            "https://keep.example", "https://read.example"
+        ])
+        remove_reading_item("https://read.example")
+        self.assertEqual(
+            [item["url"] for item in list_reading_list()],
+            ["https://keep.example"],
+        )
 
     def test_workspaces_are_saved_and_restored_by_memingo(self):
         save_workspace("Research", ["https://example.com", "not-a-url"])
