@@ -1,6 +1,6 @@
 #define AppName "Gold & Diamond Browser"
 #define AppVersion "0.1.0"
-#define AppPublisher "AtDev"
+#define AppPublisher "AtDev Dev"
 #define AppExeName "GoldDiamondBrowser.exe"
 
 [Setup]
@@ -15,11 +15,12 @@ OutputBaseFilename=Gold-Diamond-Browser-Setup-0.1.0
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\\..\\assets\\gold-diamond-icon.ico
 ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayIcon={app}\{#AppExeName}
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
+Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: checkedonce
 
 [Files]
 Source: "..\..\dist\GoldDiamondBrowser\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
