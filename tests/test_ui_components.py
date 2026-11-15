@@ -44,6 +44,15 @@ class BrowserUiTests(unittest.TestCase):
         self.assertNotIn("javascript:alert", page)
         self.assertIn("Your saved pages will appear here.", page)
 
+    def test_dashboard_ignores_malformed_bookmark_records(self):
+        page = build_dashboard(bookmarks=[
+            None,
+            {"url": None, "title": "Broken"},
+            {"url": "https://safe.example", "title": None},
+        ])
+        self.assertIn('href="https://safe.example"', page)
+        self.assertNotIn("Broken", page)
+
 
 if __name__ == "__main__":
     unittest.main()
