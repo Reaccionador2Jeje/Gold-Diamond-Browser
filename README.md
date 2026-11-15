@@ -11,14 +11,20 @@
 - Dark graphite UI with gold and diamond accents.
 - Automated native installers for Windows, Linux and macOS are built by GitHub Actions.
 
-## Architecture
+## Architecture — Memingo-First
 
-Memingo is the browser's application brain:
-- \`main.mgo\` defines application identity, theme and window configuration.
-- \`src/navigation.mgo\` resolves typed addresses and search queries.
-- \`browser/memingo_bridge.py\` is the narrow adapter that executes Memingo programs.
-- \`browser/window.py\` provides the Qt WebEngine interface.
-- \`run.py\` starts the desktop application.
+Memingo is the primary application and policy language. New browser behavior should be implemented in Memingo before considering a native-language implementation.
+
+- `main.mgo` defines application identity, theme and window configuration.
+- `ecosystem/navigation.mgo` owns address interpretation and search routing.
+- `ecosystem/settings.mgo` owns default settings and persistent settings updates.
+- `browser/memingo_bridge.py` is a narrow execution and serialization adapter.
+- `browser/window.py` is the native Qt host: widgets, Chromium WebEngine events and platform integration.
+- `run.py` starts the desktop application.
+
+Python remains only where a native host is required: Qt WebEngine, desktop widgets, process startup, user data directory discovery and the Memingo runtime adapter. Browser policies and user-facing application rules belong in Memingo. The long-term goal is to reduce the host layer as Memingo gains suitable native bindings.
+
+Persistent settings are stored in the operating system's user data directory, not inside the installed application folder.
 
 ## Requirements for running from source
 
