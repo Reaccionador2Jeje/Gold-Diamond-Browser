@@ -59,6 +59,9 @@ class EcosystemDialog(QDialog):
             "This does not make browsing anonymous and does not erase data held by websites or your network.</p>"
             "<p>Private tabs use a temporary profile and are not included in saved sessions.</p>"
         ))
+        self.clear_privacy = QPushButton("Clear this profile’s cache, cookies and local history")
+        self.clear_privacy.clicked.connect(lambda: self.done(4))
+        privacy_layout.addWidget(self.clear_privacy)
         privacy_layout.addStretch(1)
         tabs.addTab(privacy, "Privacy")
 
