@@ -27,6 +27,10 @@ jobs:
       - name: Check out browser
         uses: actions/checkout@v4
 
+      - name: Set release version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -80,7 +84,7 @@ jobs:
           StartupNotify=true
           EOF
           fpm -s dir -t deb -C package-root -n gold-diamond-browser -v "$VERSION" --architecture amd64 --description "Gold & Diamond Browser desktop web browser" opt usr
-          fpm -s dir -t rpm -C package-root -n gold-diamond-browser -v 0.1.0 --architecture x86_64 --description "Gold & Diamond Browser desktop web browser" opt usr
+          fpm -s dir -t rpm -C package-root -n gold-diamond-browser -v "$VERSION" --architecture x86_64 --description "Gold & Diamond Browser desktop web browser" opt usr
 
       - name: Build macOS DMG
         if: runner.os == 'macOS'
