@@ -717,8 +717,9 @@ class GoldDiamondWindow(QMainWindow):
         view = self.current_view()
         if not view:
             return
-        muted = not view.page().isAudioMuted()
+        muted = not bool(view.property("gdb_audio_muted"))
         view.page().setAudioMuted(muted)
+        view.setProperty("gdb_audio_muted", muted)
         self.status.showMessage("Tab muted" if muted else "Tab audio enabled", 3000)
 
     def copy_current_url(self):
