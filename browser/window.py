@@ -42,7 +42,10 @@ class GoogleAuthAwarePage(QWebEnginePage):
 
     def acceptNavigationRequest(self, url: QUrl, navigation_type, is_main_frame: bool) -> bool:
         host = url.host().lower()
-        if is_main_frame and (host == "accounts.google.com" or host.endswith(".accounts.google.com")):
+        # Google blocks sign-in inside embedded WebViews. Catch both top-level
+        # and frame navigations so an iframe-based sign-in cannot get stuck
+        # displaying Google's unsupported-browser page.
+        if host == "accounts.google.com" or host.endswith(".accounts.google.com"):
             self.external_auth_requested.emit(url)
             return False
         return super().acceptNavigationRequest(url, navigation_type, is_main_frame)
@@ -212,6 +215,10 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Download Manager", self.show_downloads, "Ctrl+J")
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        self._menu_action(
+            tools_menu, "Open Google Account sign-in in system browser",
+            lambda: self._open_google_auth_externally(QUrl("https://accounts.google.com/"))
+        )
         self._menu_action(tools_menu, "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._menu_action(tools_menu, "Browser Ecosystem · Profiles · Extensions · Privacy", self.show_ecosystem_manager)
         self._menu_action(tools_menu, "Reopen closed tab", self.reopen_closed_tab)
