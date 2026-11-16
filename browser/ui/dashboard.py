@@ -18,11 +18,12 @@ DEFAULT_TILES = [
 
 
 def build_dashboard(theme_name: str = "graphite", bookmarks: list[dict] | None = None, search_engine: str = "https://www.google.com/search?q=") -> str:
+    # All built-in dashboard variants remain black; only accents change.
     palettes = {
-        "graphite": ("#e5b85c", "#75d8e8", "#f4f7fb", "#9eafc4", "#080e17", "#263b50", "rgba(21,34,51,.78)", "rgba(156,184,212,.18)", "rgba(33,50,71,.88)", "rgba(15,26,41,.92)"),
-        "midnight": ("#9fbcff", "#72e4ff", "#eef2ff", "#a1b1d8", "#080d20", "#243a70", "rgba(20,31,65,.82)", "rgba(130,164,255,.2)", "rgba(35,51,94,.9)", "rgba(13,23,49,.94)"),
-        "pearl": ("#a36c12", "#087f9b", "#182438", "#53647b", "#e9eef6", "#ffffff", "rgba(255,255,255,.86)", "rgba(63,91,125,.22)", "rgba(255,255,255,.94)", "rgba(224,232,243,.96)"),
-        "forest": ("#d8c27a", "#80d9b0", "#e9f6ed", "#9bb9a4", "#081713", "#244b3a", "rgba(19,48,37,.82)", "rgba(128,217,176,.2)", "rgba(30,69,52,.9)", "rgba(12,31,24,.94)"),
+        "graphite": ("#e5b85c", "#75d8e8", "#f4f4f4", "#a0a0a0", "#000000", "#111111", "rgba(12,12,12,.94)", "rgba(180,180,180,.18)", "rgba(24,24,24,.98)", "rgba(8,8,8,.98)"),
+        "midnight": ("#9fbcff", "#72e4ff", "#f0f3f8", "#9ba8ba", "#000000", "#10131a", "rgba(10,12,16,.96)", "rgba(130,164,255,.2)", "rgba(20,24,31,.98)", "rgba(7,9,13,.98)"),
+        "pearl": ("#d8b36a", "#75cfe0", "#f5f5f5", "#a0a0a0", "#000000", "#111111", "rgba(12,12,12,.94)", "rgba(180,180,180,.18)", "rgba(24,24,24,.98)", "rgba(8,8,8,.98)"),
+        "forest": ("#d8c27a", "#80d9b0", "#eff7f0", "#9eb5a3", "#000000", "#0d1711", "rgba(9,14,11,.96)", "rgba(128,217,176,.2)", "rgba(16,24,18,.98)", "rgba(6,10,8,.98)"),
     }
     gold, cyan, ink, muted, background, glow, glass, line, tile_a, tile_b = palettes.get(theme_name, palettes["graphite"])
     search_engine = search_engine if search_engine.startswith(("https://", "http://")) else "https://www.google.com/search?q="
@@ -45,24 +46,24 @@ def build_dashboard(theme_name: str = "graphite", bookmarks: list[dict] | None =
         bookmark_cards = '<div class="empty">Your saved pages will appear here.</div>'
     template = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<meta name="color-scheme" content="dark light"><title>Gold & Diamond — gold-diamond.local</title>
+<meta name="color-scheme" content="dark"><title>Gold & Diamond — gold-diamond.local</title>
 <style>
 :root{--gold:__GOLD__;--cyan:__CYAN__;--ink:__INK__;--muted:__MUTED__;--bg:__BG__;--glow:__GLOW__;--glass:__GLASS__;--line:__LINE__;--tile-a:__TILE_A__;--tile-b:__TILE_B__}
-*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,'Segoe UI',Arial,sans-serif;background:radial-gradient(ellipse at 16% 8%,var(--glow) 0%,transparent 36%),radial-gradient(ellipse at 88% 78%,#173b42 0%,transparent 34%),linear-gradient(135deg,var(--bg),#101b2b 55%,var(--bg));}}
+*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:var(--ink);font-family:Inter,'Segoe UI',Arial,sans-serif;background:radial-gradient(ellipse at 16% 8%,var(--glow) 0%,transparent 36%),radial-gradient(ellipse at 88% 78%,#173b42 0%,transparent 34%),linear-gradient(135deg,#000000,#080808 55%,#000000);}}
 body:before{{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:radial-gradient(#b8d8e8 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,black,transparent 85%)}}
 main{{position:relative;width:min(1080px,92%);margin:auto;padding:54px 0 34px}}
 .top{{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:48px}}
-.brand{{display:flex;align-items:center;gap:13px}}.logo{{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:25px;color:var(--gold);background:linear-gradient(145deg,#304158,#111c2c);border:1px solid #53677d;box-shadow:0 12px 35px #0006}}
+.brand{{display:flex;align-items:center;gap:13px}}.logo{{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:25px;color:var(--gold);background:linear-gradient(145deg,#202020,#050505);border:1px solid #333333;box-shadow:0 12px 35px #0006}}
 .brand b{{letter-spacing:2px;font-size:14px}}.brand small{{display:block;color:var(--muted);letter-spacing:1px;margin-top:4px;font-size:10px}}
 .clock{{text-align:right;color:var(--muted);font-size:12px}}#time{{font-size:24px;color:var(--ink);font-weight:650;letter-spacing:1px}}
 .hero{{text-align:center;margin-bottom:34px}}.eyebrow{{font-size:11px;letter-spacing:4px;color:var(--cyan);text-transform:uppercase}}
 h1{{font-size:clamp(34px,6vw,58px);letter-spacing:-2px;margin:13px 0 8px}}h1 em{{font-style:normal;color:var(--gold)}}.sub{{color:var(--muted);font-size:15px}}
 .search{{display:flex;max-width:760px;margin:27px auto 0;padding:8px;background:var(--glass);border:1px solid #51647a;border-radius:18px;box-shadow:0 18px 55px #0005;backdrop-filter:blur(16px)}}
-.search input{{flex:1;min-width:0;background:transparent;border:0;outline:0;color:white;padding:13px 15px;font-size:15px}}.search button{{border:0;border-radius:12px;padding:0 23px;color:#111827;background:linear-gradient(135deg,#f0d28a,#d5a64b);font-weight:750;cursor:pointer}}
-.section-head{{display:flex;justify-content:space-between;align-items:end;margin:38px 0 14px}}h2{{font-size:13px;letter-spacing:2px;margin:0;color:#d8e3ef}}.hint{{font-size:11px;color:var(--muted)}}
+.search input{{flex:1;min-width:0;background:#080808;border:0;outline:0;color:#f5f5f5;padding:13px 15px;font-size:15px}}.search button{{border:0;border-radius:12px;padding:0 23px;color:#000000;background:linear-gradient(135deg,#f0d28a,#d5a64b);font-weight:750;cursor:pointer}}
+.section-head{{display:flex;justify-content:space-between;align-items:end;margin:38px 0 14px}}h2{{font-size:13px;letter-spacing:2px;margin:0;color:#f0f0f0}}.hint{{font-size:11px;color:var(--muted)}}
 .grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}}
 .tile{{min-height:122px;text-decoration:none;color:var(--ink);background:linear-gradient(145deg,var(--tile-a),var(--tile-b));border:1px solid var(--line);border-radius:18px;padding:19px;transition:transform .18s,border-color .18s,box-shadow .18s;backdrop-filter:blur(10px)}.tile:hover{{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 16px 30px #0004}}.glyph{{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#75d8e81a;color:var(--cyan);font-size:20px;margin-bottom:12px}}.tile b{{display:block;font-size:14px}}.tile small{{display:block;color:var(--muted);font-size:11px;margin-top:5px}}
-.saved-grid{{display:flex;flex-wrap:wrap;gap:9px}}.saved{{text-decoration:none;color:#e8eff7;background:var(--glass);border:1px solid var(--line);padding:10px 13px;border-radius:12px;font-size:12px}}.saved span{{color:var(--gold);margin-right:8px}}.empty{{color:var(--muted);font-size:12px;padding:10px}}
+.saved-grid{{display:flex;flex-wrap:wrap;gap:9px}}.saved{{text-decoration:none;color:#f0f0f0;background:var(--glass);border:1px solid var(--line);padding:10px 13px;border-radius:12px;font-size:12px}}.saved span{{color:var(--gold);margin-right:8px}}.empty{{color:var(--muted);font-size:12px;padding:10px}}
 .footer{{display:flex;justify-content:space-between;gap:15px;margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:#8193a8;font-size:10px;letter-spacing:1px}}.footer strong{{color:var(--cyan)}}
 @media(max-width:680px){{main{{padding-top:28px}}.top{{margin-bottom:34px}}.grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}.tile{{padding:15px;min-height:110px}}.footer{{flex-direction:column}}}}
 </style></head>
