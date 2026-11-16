@@ -14,6 +14,16 @@ class BrowserUiTests(unittest.TestCase):
                 self.assertIn("QMainWindow", stylesheet)
                 self.assertIn("QTabBar::tab:selected", stylesheet)
 
+    def test_every_palette_uses_black_surfaces(self):
+        for name, palette in PALETTES.items():
+            with self.subTest(theme=name):
+                self.assertEqual(palette["bg"], "#000000")
+                self.assertEqual(palette["field"], "#080808" if name != "midnight" else "#07090d")
+                stylesheet = build_stylesheet(name)
+                self.assertIn("QDialog", stylesheet)
+                self.assertIn("QTextBrowser", stylesheet)
+                self.assertIn("QComboBox QAbstractItemView", stylesheet)
+
     def test_unknown_theme_falls_back_to_graphite(self):
         self.assertEqual(build_stylesheet("unknown"), build_stylesheet("graphite"))
 
