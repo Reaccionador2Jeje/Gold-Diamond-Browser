@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
     QTabWidget, QToolBar, QVBoxLayout, QWidget, QSplitter,
 )
-from PySide6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile
+from PySide6.QtWebEngineCore import (
+    QWebEngineDownloadRequest, QWebEnginePage, QWebEngineProfile, QWebEngineSettings,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from .ai_assistant import AIAssistantDialog
@@ -295,6 +297,8 @@ class GoldDiamondWindow(QMainWindow):
             view.setProperty("gdb_profile_id", profile_id)
             page = GoogleAuthAwarePage(self._persistent_profile(profile_id), view)
         page.external_auth_requested.connect(self._open_google_auth_externally)
+        self._configure_account_compatibility(page)
+        page.newWindowRequested.connect(self._handle_account_popup)
         view.setPage(page)
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
@@ -315,6 +319,37 @@ class GoldDiamondWindow(QMainWindow):
         else:
             view.setUrl(QUrl(url))
         self.address.setFocus()
+
+    def _configure_account_compatibility(self, page: QWebEnginePage):
+        """Enable standard web features commonly required by modern sign-in flows."""
+        settings = page.settings()
+        for attribute in (
+            QWebEngineSettings.WebAttribute.JavascriptEnabled,
+            QWebEngineSettings.WebAttribute.LocalStorageEnabled,
+            QWebEngineSettings.WebAttribute.JavascriptCanOpenWindows,
+            QWebEngineSettings.WebAttribute.FullScreenSupportEnabled,
+            QWebEngineSettings.WebAttribute.WebGLEnabled,
+            QWebEngineSettings.WebAttribute.Accelerated2dCanvasEnabled,
+        ):
+            settings.setAttribute(attribute, True)
+
+        # Keep insecure mixed content disabled; account pages must retain HTTPS security.
+        settings.setAttribute(
+            QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, False
+        )
+
+    def _handle_account_popup(self, request):
+        """Open OAuth and other legitimate target=_blank flows in a real browser tab."""
+        url = request.requestedUrl()
+        host = url.host().lower()
+        if host == "accounts.google.com" or host.endswith(".accounts.google.com"):
+            self._open_google_auth_externally(url)
+            return
+
+        self.new_tab()
+        target = self.current_view()
+        if target is not None:
+            request.openIn(target.page())
 
     def _open_google_auth_externally(self, url: QUrl):
         """Continue Google account authentication in the user's default browser."""
