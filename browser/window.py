@@ -299,7 +299,10 @@ class GoldDiamondWindow(QMainWindow):
         page.external_auth_requested.connect(self._open_google_auth_externally)
         self._configure_account_compatibility(page)
         page.newWindowRequested.connect(self._handle_account_popup)
-        page.featurePermissionRequested.connect(self._handle_feature_permission)
+        page.featurePermissionRequested.connect(
+            lambda origin, feature, browser_page=page:
+                self._handle_feature_permission(browser_page, origin, feature)
+        )
         view.setPage(page)
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
@@ -339,7 +342,7 @@ class GoldDiamondWindow(QMainWindow):
             QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, False
         )
 
-    def _handle_feature_permission(self, origin: QUrl, feature):
+    def _handle_feature_permission(self, page: QWebEnginePage, origin: QUrl, feature):
         """Ask the user before a website accesses sensitive device capabilities."""
         feature_names = {
             QWebEnginePage.Feature.MediaAudioCapture: "microphone",
@@ -354,30 +357,28 @@ class GoldDiamondWindow(QMainWindow):
         }
         feature_name = feature_names.get(feature)
         if feature_name is None:
-            page = self.sender()
-            if isinstance(page, QWebEnginePage):
-                page.setFeaturePermission(
-                    origin, feature,
-                    QWebEnginePage.PermissionPolicy.PermissionDeniedByUser,
-                )
+            page.setFeaturePermission(
+                origin, feature, QWebEnginePage.PermissionPolicy.PermissionDeniedByUser
+            )
             return
 
-        host = origin.host() or origin.toString()
-        answer = QMessageBox.question(
-            self,
-            "Website permission request",
-            f"{host} wants to access {feature_name}.\\n\\nAllow this for this browser session?",
-            QMessageBox.StandardButton.Allow | QMessageBox.StandardButton.Deny,
-            QMessageBox.StandardButton.Deny,
+        prompt = QMessageBox(self)
+        prompt.setWindowTitle("Website permission request")
+        prompt.setIcon(QMessageBox.Icon.Question)
+        prompt.setText(
+            f"{origin.host() or origin.toString()} wants to access {feature_name}."
         )
+        prompt.setInformativeText("Allow this website to use this feature in the current browser session?")
+        allow_button = prompt.addButton("Allow", QMessageBox.ButtonRole.AcceptRole)
+        prompt.addButton("Deny", QMessageBox.ButtonRole.RejectRole)
+        prompt.setDefaultButton(prompt.button(QMessageBox.StandardButton.No)) if False else None
+        prompt.exec()
         policy = (
             QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
-            if answer == QMessageBox.StandardButton.Allow
+            if prompt.clickedButton() is allow_button
             else QWebEnginePage.PermissionPolicy.PermissionDeniedByUser
         )
-        page = self.sender()
-        if isinstance(page, QWebEnginePage):
-            page.setFeaturePermission(origin, feature, policy)
+        page.setFeaturePermission(origin, feature, policy)
 
     def _handle_account_popup(self, request):
         """Open OAuth and other legitimate target=_blank flows in a real browser tab."""
