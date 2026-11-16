@@ -107,6 +107,24 @@ python run.py
 \`\`\`
 
 
+## Google account connection (OAuth 2.0)
+
+Gold & Diamond includes an official Google installed-app OAuth flow using authorization code + PKCE and a loopback callback. It does not sign the Qt WebEngine page into Gmail/YouTube and does not copy cookies. Tokens are stored with the operating system credential store via Python keyring and are namespaced by browser profile.
+
+To enable it, create a Google Cloud OAuth client with application type **Desktop app**, configure the consent screen and permitted test users as needed, then set the client ID before launching:
+
+PowerShell:
+
+    $env:GDB_GOOGLE_CLIENT_ID = "your-desktop-client-id"
+    python run.py
+
+Linux / macOS:
+
+    export GDB_GOOGLE_CLIENT_ID="your-desktop-client-id"
+    python run.py
+
+Use Tools → Connect Google account (OAuth)… to authorize. Google API features still need to be implemented separately and must request only the scopes they need. Never paste client secrets, access tokens or refresh tokens into chat or source control.
+
 ## Gold & Diamond AI setup
 
 Gold & Diamond AI supports chat-completions-compatible API providers. Configure the provider base URL and model in Tools → Browser settings → AI assistant. The API key is intentionally not stored in browser settings; set it in the environment before launching the browser:
