@@ -145,6 +145,8 @@ jobs:
   publish:
     name: Publish GitHub Release
     needs: build
+    # Publish successful Windows/Linux builds even if the macOS hosted runner is unavailable.
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Download all installers
@@ -153,6 +155,16 @@ jobs:
           pattern: installers-*
           path: release-files
           merge-multiple: true
+
+      - name: Validate required installers
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(release-files/*)
+          (("${#files[@]}" > 0)) || { echo "No installers were produced."; exit 1; }
+          compgen -G "release-files/*.exe" > /dev/null || { echo "Windows installer is missing."; exit 1; }
+          compgen -G "release-files/*.deb" > /dev/null || { echo "Linux DEB package is missing."; exit 1; }
+          compgen -G "release-files/*.rpm" > /dev/null || { echo "Linux RPM package is missing."; exit 1; }
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
