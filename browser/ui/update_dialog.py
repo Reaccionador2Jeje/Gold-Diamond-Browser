@@ -9,7 +9,7 @@ import urllib.request
 from PySide6.QtCore import QThread, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox,
+    QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
 )
 
 
@@ -54,7 +54,7 @@ class ReleaseCheckWorker(QThread):
             self.completed.emit({
                 "version": tag.lstrip("v"),
                 "tag": tag,
-                "url": payload.get("html_url", "https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser/releases"),
+                "url": release_url,
                 "assets": safe_assets,
                 "published_at": payload.get("published_at", ""),
                 "body": payload.get("body", ""),
