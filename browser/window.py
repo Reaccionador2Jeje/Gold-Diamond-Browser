@@ -350,7 +350,6 @@ class GoldDiamondWindow(QMainWindow):
             QWebEnginePage.Feature.MediaAudioVideoCapture: "camera and microphone",
             QWebEnginePage.Feature.Geolocation: "your location",
             QWebEnginePage.Feature.Notifications: "desktop notifications",
-            QWebEnginePage.Feature.ClipboardReadWrite: "clipboard access",
             QWebEnginePage.Feature.DesktopVideoCapture: "screen capture",
             QWebEnginePage.Feature.DesktopAudioVideoCapture: "screen and audio capture",
             QWebEnginePage.Feature.MouseLock: "mouse control",
