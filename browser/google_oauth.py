@@ -11,6 +11,7 @@ import json
 import os
 import secrets
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,6 +30,39 @@ SCOPES = "openid email profile"
 
 def _b64url(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
+
+
+def get_google_access_token(profile_id: str, email: str) -> str:
+    """Return a valid access token, refreshing it through Google's token endpoint."""
+    username = f"{profile_id}:{email}"
+    raw = keyring.get_password(SERVICE_NAME, username)
+    if not raw:
+        raise RuntimeError("No Google account is connected for this browser profile.")
+    credentials = json.loads(raw)
+    if credentials.get("access_token") and int(credentials.get("expires_at", 0)) > int(time.time()) + 60:
+        return credentials["access_token"]
+    refresh_token = credentials.get("refresh_token")
+    if not refresh_token:
+        raise RuntimeError("The Google connection expired. Connect the account again.")
+    payload = urllib.parse.urlencode({
+        "client_id": os.environ.get("GDB_GOOGLE_CLIENT_ID", "").strip(),
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+    }).encode("ascii")
+    request = urllib.request.Request(
+        TOKEN_URL, data=payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        refreshed = json.loads(response.read().decode("utf-8"))
+    credentials["access_token"] = refreshed["access_token"]
+    credentials["expires_at"] = int(time.time()) + int(refreshed.get("expires_in", 3600))
+    credentials["token_type"] = refreshed.get("token_type", "Bearer")
+    if refreshed.get("refresh_token"):
+        credentials["refresh_token"] = refreshed["refresh_token"]
+    keyring.set_password(SERVICE_NAME, username, json.dumps(credentials))
+    return credentials["access_token"]
 
 
 class _CallbackServer(ThreadingHTTPServer):
@@ -112,8 +146,7 @@ class GoogleOAuthDialog(QDialog):
             def log_message(self, *_args):
                 return
 
-        try:
-            self._server = _CallbackServer(("127.0.0.1", 0), Handler)
+        self._result = {}\n        self._error = None\n        try:\n            self._server = _CallbackServer(("127.0.0.1", 0), Handler)
             port = self._server.server_address[1]
             self._server_thread = threading.Thread(
                 target=self._server.serve_forever, daemon=True
@@ -184,7 +217,7 @@ class GoogleOAuthDialog(QDialog):
                     "refresh_token": tokens.get("refresh_token"),
                     "token_type": tokens.get("token_type", "Bearer"),
                     "scope": tokens.get("scope", SCOPES),
-                    "expires_in": tokens.get("expires_in"),
+                    "expires_at": int(time.time()) + int(tokens.get("expires_in", 3600)),
                     "email": account,
                     "sub": identity.get("sub"),
                 }),
