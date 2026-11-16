@@ -799,6 +799,11 @@ class GoldDiamondWindow(QMainWindow):
             pass
         self.status.showMessage('Cache, cookies and local browsing history cleared', 5000)
 
+    def show_updates(self):
+        from .ui.update_dialog import UpdateDialog
+        dialog = UpdateDialog(self.config.get("version", "0.0.0"), self)
+        dialog.exec()
+
     def show_settings(self):
         dialog = SettingsDialog(self.settings, self)
         if dialog.exec() != SettingsDialog.DialogCode.Accepted:
