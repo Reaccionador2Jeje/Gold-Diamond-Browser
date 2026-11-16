@@ -16,7 +16,8 @@ from PySide6.QtWebEngineCore import (
 )
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from .ai_assistant import AIAssistantDialog\nfrom .google_oauth import GoogleOAuthDialog
+from .ai_assistant import AIAssistantDialog
+from .google_oauth import GoogleOAuthDialog
 from .profile_store import active_profile_id, create_profile, enabled_extensions, set_active_profile
 from .ui.ecosystem_dialog import EcosystemDialog
 from .ui.dashboard import build_dashboard
@@ -1025,7 +1026,11 @@ class GoldDiamondWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.warning(self, "Settings", f"Could not save settings: {exc}")
 
-    def connect_google_account(self):\n        dialog = GoogleOAuthDialog(self, profile_id=self.current_profile_id())\n        dialog.exec()\n\n    def show_ai_assistant(self):
+    def connect_google_account(self):
+        dialog = GoogleOAuthDialog(self, profile_id=self.current_profile_id())
+        dialog.exec()
+
+    def show_ai_assistant(self):
         dialog = AIAssistantDialog(self.settings, self)
         dialog.exec()
 
