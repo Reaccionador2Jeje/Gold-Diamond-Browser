@@ -42,7 +42,9 @@ class GoldDiamondWindow(QMainWindow):
         self.theme_name = self.settings.get("theme", "graphite")
         self._download_connections = set()
         self.download_items = []
+        self.download_manager = None
         self.closed_tabs: list[dict[str, str]] = []
+
         self.active_profile_id = active_profile_id()
         self._session_profiles_seen = {self.active_profile_id}
         self.browser_profiles = {}
@@ -110,6 +112,7 @@ class GoldDiamondWindow(QMainWindow):
         self._action(toolbar, "Private", "Open an isolated private tab", self.private_window, "Ctrl+Shift+N")
         self._action(toolbar, "Mute", "Mute or unmute this tab", self.toggle_tab_audio)
         self._action(toolbar, "Tabs", "Find and switch tabs", self.find_tab, "Ctrl+Shift+A")
+        self._action(toolbar, "Downloads", "Open download manager", self.show_downloads, "Ctrl+J")
         self._action(toolbar, "Ask AI", "Ask Gold & Diamond AI", self.show_ai_assistant)
         self._action(toolbar, "Settings", "Configure Gold & Diamond Browser", self.show_settings)
         self._action(toolbar, "☰", "Toggle library sidebar", self.toggle_sidebar, "Ctrl+Shift+L")
@@ -190,6 +193,7 @@ class GoldDiamondWindow(QMainWindow):
         tools_menu = bar.addMenu("Tools")
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
         self._menu_action(tools_menu, "Clear browsing history", self.clear_browsing_history)
+        self._menu_action(tools_menu, "Download Manager", self.show_downloads, "Ctrl+J")
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
         self._menu_action(tools_menu, "Ask Gold & Diamond AI", self.show_ai_assistant)
@@ -726,18 +730,46 @@ class GoldDiamondWindow(QMainWindow):
         if self.current_view():
             self.current_view().setZoomFactor(value)
 
+    def _ensure_download_manager(self):
+        if self.download_manager is None:
+            from .ui.download_manager import DownloadManagerDialog
+            self.download_manager = DownloadManagerDialog(self)
+        return self.download_manager
+
     def handle_download(self, download: QWebEngineDownloadRequest):
-        suggested = download.downloadFileName()
-        target = Path.home() / "Downloads" / suggested
-        target.parent.mkdir(parents=True, exist_ok=True)
-        download.setDownloadDirectory(str(target.parent))
-        download.setDownloadFileName(target.name)
-        download.accept()
-        self.download_items.append({"name": suggested, "path": str(target), "state": "Downloading"})
-        self.status.showMessage(f"Downloading: {suggested}", 5000)
-        download.isFinishedChanged.connect(
-            lambda item=download, name=suggested: self.download_finished(item, name)
-        )
+        """Accept downloads into the user's Downloads folder and track them live."""
+        try:
+            download_dir = Path.home() / "Downloads"
+            download_dir.mkdir(parents=True, exist_ok=True)
+            suggested = Path(download.downloadFileName() or "download").name
+            if not suggested or suggested in {".", ".."}:
+                suggested = "download"
+            target = download_dir / suggested
+            stem, suffix = target.stem, target.suffix
+            counter = 1
+            while target.exists():
+                target = download_dir / f"{stem} ({counter}){suffix}"
+                counter += 1
+
+            download.setDownloadDirectory(str(download_dir))
+            download.setDownloadFileName(target.name)
+            manager = self._ensure_download_manager()
+            manager.add_download(download, target)
+
+            for signal_name in ("receivedBytesChanged", "totalBytesChanged", "stateChanged", "isFinishedChanged"):
+                signal = getattr(download, signal_name, None)
+                if signal is not None:
+                    signal.connect(lambda *args, request=download: manager.refresh(request))
+
+            download.accept()
+            self.download_items.append({"name": target.name, "path": str(target), "state": "Downloading"})
+            self.status.showMessage(f"Download started: {target.name}", 5000)
+            manager.show()
+            manager.raise_()
+            manager.activateWindow()
+        except Exception as exc:
+            self.status.showMessage(f"Could not start download: {exc}", 7000)
+            QMessageBox.warning(self, "Download error", f"Gold & Diamond could not start this download.\\n\\n{exc}")
 
     def download_finished(self, download, name: str):
         state = "Completed" if download.state() == QWebEngineDownloadRequest.DownloadState.DownloadCompleted else "Failed"
@@ -745,18 +777,15 @@ class GoldDiamondWindow(QMainWindow):
             if item["name"] == name and item["state"] == "Downloading":
                 item["state"] = state
                 break
+        if self.download_manager is not None:
+            self.download_manager.refresh(download)
         self.status.showMessage(f"{name}: {state.lower()}", 5000)
 
     def show_downloads(self):
-        menu = QMenu("Downloads", self)
-        if not self.download_items:
-            empty = menu.addAction("No downloads in this session")
-            empty.setEnabled(False)
-        for item in reversed(self.download_items):
-            action = menu.addAction(f'{item["state"]}  ·  {item["name"][:45]}')
-            action.setToolTip(item["path"])
-            action.triggered.connect(lambda checked=False, path=item["path"]: self.open_download_folder(path))
-        menu.exec(self.mapToGlobal(self.rect().center()))
+        manager = self._ensure_download_manager()
+        manager.show()
+        manager.raise_()
+        manager.activateWindow()
 
     def open_download_folder(self, path: str):
         from PySide6.QtGui import QDesktopServices
