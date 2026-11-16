@@ -69,6 +69,19 @@ class SettingsDialog(QDialog):
         ai_form.addRow(note)
         tabs.addTab(ai, "AI assistant")
 
+        updates = QWidget()
+        updates_layout = QVBoxLayout(updates)
+        updates_layout.addWidget(QLabel("<h2>Gold &amp; Diamond Updates</h2>"))
+        updates_layout.addWidget(QLabel(
+            "Check GitHub Releases for the latest stable version. "
+            "The official installers and release notes are hosted by AtDev Dev."
+        ))
+        updates_layout.addStretch(1)
+        self.check_updates_button = QPushButton("Check for updates on GitHub")
+        self.check_updates_button.clicked.connect(self._open_updates)
+        updates_layout.addWidget(self.check_updates_button)
+        tabs.addTab(updates, "Updates")
+
         about = QWidget()
         about_layout = QVBoxLayout(about)
         credits = QLabel(
@@ -94,7 +107,14 @@ class SettingsDialog(QDialog):
         buttons.addWidget(save)
         root.addLayout(buttons)
 
-    def _open_updates(self):\n        from .update_dialog import UpdateDialog\n        dialog = UpdateDialog(self.parent().config.get("version", "0.0.0") if self.parent() else "0.0.0", self)\n        dialog.exec()\n\n    def _save(self):
+    def _open_updates(self):
+        from .update_dialog import UpdateDialog
+        owner = self.parent()
+        version = owner.config.get("version", "0.0.0") if owner else "0.0.0"
+        dialog = UpdateDialog(version, self)
+        dialog.exec()
+
+    def _save(self):
         home = self.home_page.text().strip() or "https://gold-diamond.local/"
         if not home.startswith(("https://", "http://")):
             home = "https://" + home
