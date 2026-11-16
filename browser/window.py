@@ -370,8 +370,9 @@ class GoldDiamondWindow(QMainWindow):
         )
         prompt.setInformativeText("Allow this website to use this feature in the current browser session?")
         allow_button = prompt.addButton("Allow", QMessageBox.ButtonRole.AcceptRole)
-        prompt.addButton("Deny", QMessageBox.ButtonRole.RejectRole)
-        prompt.setDefaultButton(prompt.button(QMessageBox.StandardButton.No)) if False else None
+        deny_button = prompt.addButton("Deny", QMessageBox.ButtonRole.RejectRole)
+        prompt.setDefaultButton(deny_button)
+        prompt.setEscapeButton(deny_button)
         prompt.exec()
         policy = (
             QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
