@@ -216,6 +216,7 @@ class GoldDiamondWindow(QMainWindow):
         self._menu_action(tools_menu, "Download Manager", self.show_downloads, "Ctrl+J")
         self._menu_action(tools_menu, "Save page as PDF", self.save_page_pdf)
         self._menu_action(tools_menu, "Browser settings", self.show_settings)
+        self._menu_action(tools_menu, "Connect Google account (OAuth)…", self.connect_google_account)
         self._menu_action(
             tools_menu, "Open Google Account sign-in in system browser",
             lambda: self._open_google_auth_externally(QUrl("https://accounts.google.com/"))
