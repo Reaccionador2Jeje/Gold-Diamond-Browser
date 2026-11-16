@@ -27,7 +27,7 @@ from .memingo_bridge import (
     add_bookmark, add_reading_item, clear_history, list_bookmarks, list_history,
     list_reading_list, load_settings, load_session, record_history, remove_bookmark,
     remove_reading_item, resolve_url, save_setting, save_session,
-    list_workspaces, save_workspace,
+    list_workspaces, save_workspace, remove_workspace,
 )
 
 
@@ -204,6 +204,7 @@ class GoldDiamondWindow(QMainWindow):
         spaces_menu = bar.addMenu("Workspaces")
         self._menu_action(spaces_menu, "Save current tabs as workspace…", self.save_current_workspace, "Ctrl+Shift+W")
         self._menu_action(spaces_menu, "Open workspace…", self.open_workspace)
+        self._menu_action(spaces_menu, "Manage saved workspaces…", self.manage_workspaces)
 
         tools_menu = bar.addMenu("Tools")
         self._menu_action(tools_menu, "Set current page as startup page", self.set_startup_page, "Ctrl+Shift+H")
@@ -673,6 +674,46 @@ class GoldDiamondWindow(QMainWindow):
             self.new_tab(url)
         self.status.showMessage(f'Workspace "{workspace.get("name") or "Workspace"}" opened', 4000)
 
+    def manage_workspaces(self):
+        """Show saved workspaces and allow the user to remove one."""
+        try:
+            workspaces = list_workspaces()
+        except Exception as exc:
+            QMessageBox.warning(self, "Workspaces", f"Could not load workspaces: {exc}")
+            return
+        valid = [
+            item for item in workspaces
+            if isinstance(item, dict) and isinstance(item.get("name"), str)
+            and item["name"].strip()
+        ]
+        if not valid:
+            self.status.showMessage("No saved workspaces to manage", 3500)
+            return
+        labels = [
+            f'{item["name"]} · {len(item.get("tabs", []))} tabs'
+            for item in valid
+        ]
+        selected, accepted = QInputDialog.getItem(
+            self, "Manage workspaces", "Select a workspace to remove:", labels, 0, False
+        )
+        if not accepted:
+            return
+        workspace = valid[labels.index(selected)]
+        name = workspace["name"]
+        answer = QMessageBox.question(
+            self, "Remove workspace",
+            f'Remove the saved workspace "{name}"? Open tabs will not be affected.',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            remove_workspace(name)
+            self.status.showMessage(f'Workspace "{name}" removed', 3500)
+        except Exception as exc:
+            QMessageBox.warning(self, "Workspaces", f"Could not remove workspace: {exc}")
+
     def toggle_split_view(self):
         if self.splitter is not None:
             self.setCentralWidget(self.tabs)
@@ -713,8 +754,17 @@ class GoldDiamondWindow(QMainWindow):
         view.setProperty("private_mode", bool(source.property("private_mode")))
         view.setProperty("gdb_profile_id", source.property("gdb_profile_id"))
         view.setProperty("internal_home", bool(source.property("internal_home")))
-        view.setPage(QWebEnginePage(source.page().profile(), view))
+        split_page = GoogleAuthAwarePage(source.page().profile(), view)
+        split_page.external_auth_requested.connect(self._open_google_auth_externally)
+        self._configure_account_compatibility(split_page)
+        split_page.newWindowRequested.connect(self._handle_account_popup)
+        split_page.featurePermissionRequested.connect(
+            lambda origin, feature, browser_page=split_page:
+                self._handle_feature_permission(browser_page, origin, feature)
+        )
+        view.setPage(split_page)
         view.urlChanged.connect(lambda qurl, field=address: field.setText(qurl.toString()))
+        view.titleChanged.connect(lambda title, browser=view: self.update_title(title, browser))
         view.loadFinished.connect(lambda ok, browser=view: self.page_loaded(ok, browser))
         panel_layout.addWidget(view, 1)
 
