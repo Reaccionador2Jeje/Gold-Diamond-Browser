@@ -75,7 +75,8 @@ class GoogleOAuthDialog(QDialog):
 
     def __init__(self, parent=None, profile_id: str = "default"):
         super().__init__(parent)
-        self.profile_id = profile_id\n        self.setWindowTitle("Connect Google account")
+        self.profile_id = profile_id
+        self.setWindowTitle("Connect Google account")
         self.setMinimumWidth(430)
         self._server = None
         self._server_thread = None
