@@ -18,7 +18,13 @@ class BrowserUiTests(unittest.TestCase):
         for name, palette in PALETTES.items():
             with self.subTest(theme=name):
                 self.assertEqual(palette["bg"], "#000000")
-                self.assertEqual(palette["field"], "#080808" if name != "midnight" else "#07090d")
+                expected_fields = {
+                    "graphite": "#080808",
+                    "midnight": "#07090d",
+                    "pearl": "#080808",
+                    "forest": "#060a08",
+                }
+                self.assertEqual(palette["field"], expected_fields[name])
                 stylesheet = build_stylesheet(name)
                 self.assertIn("QDialog", stylesheet)
                 self.assertIn("QTextBrowser", stylesheet)
