@@ -306,6 +306,11 @@ class GoldDiamondWindow(QMainWindow):
         profile = QWebEngineProfile(profile_id, self)
         profile.setPersistentStoragePath(str(profile_dir / 'storage'))
         profile.setCachePath(str(profile_dir / 'cache'))
+        # Keep authentication cookies and web storage across restarts and OAuth redirects.
+        profile.setPersistentCookiesPolicy(
+            QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies
+        )
+        profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
         self.browser_profiles[profile_id] = profile
         return profile
 
