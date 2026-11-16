@@ -333,16 +333,27 @@ class GoldDiamondWindow(QMainWindow):
         if profile_id in self.browser_profiles:
             return self.browser_profiles[profile_id]
         from .memingo_bridge import DATA_DIR
-        profile_dir = DATA_DIR / 'profiles' / profile_id
-        profile_dir.mkdir(parents=True, exist_ok=True)
+        profile_dir = DATA_DIR / "profiles" / profile_id
+        storage_dir = profile_dir / "storage"
+        cache_dir = profile_dir / "cache"
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
         profile = QWebEngineProfile(profile_id, self)
-        profile.setPersistentStoragePath(str(profile_dir / 'storage'))
-        profile.setCachePath(str(profile_dir / 'cache'))
-        # Keep authentication cookies and web storage across restarts and OAuth redirects.
+        # Configure persistent paths and cookie policy before creating any page.
+        profile.setPersistentStoragePath(str(storage_dir))
+        profile.setCachePath(str(cache_dir))
         profile.setPersistentCookiesPolicy(
             QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies
         )
         profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
+
+        # Explicitly load cookies saved by earlier sessions into this profile.
+        # ForcePersistentCookies also stores session cookies, not only long-lived ones.
+        profile.cookieStore().loadAllCookies()
+
+        # Keep a strong reference for the entire application lifetime so Chromium
+        # can finish writing cookies and web storage when the browser shuts down.
         self.browser_profiles[profile_id] = profile
         return profile
 
