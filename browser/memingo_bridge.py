@@ -209,3 +209,9 @@ def save_workspace(name: str, urls: list[str]) -> list[dict[str, Any]]:
     return _run_data_module(
         "workspaces.mgo", {"action": "save", "name": name.strip(), "tabs": clean_urls}
     ).get("workspaces", [])
+
+
+def remove_workspace(name: str) -> list[dict[str, Any]]:
+    return _run_data_module(
+        "workspaces.mgo", {"action": "remove", "name": name.strip()}
+    ).get("workspaces", [])
