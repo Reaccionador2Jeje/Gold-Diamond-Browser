@@ -94,7 +94,7 @@ class SettingsDialog(QDialog):
         buttons.addWidget(save)
         root.addLayout(buttons)
 
-    def _save(self):
+    def _open_updates(self):\n        from .update_dialog import UpdateDialog\n        dialog = UpdateDialog(self.parent().config.get("version", "0.0.0") if self.parent() else "0.0.0", self)\n        dialog.exec()\n\n    def _save(self):
         home = self.home_page.text().strip() or "https://gold-diamond.local/"
         if not home.startswith(("https://", "http://")):
             home = "https://" + home
