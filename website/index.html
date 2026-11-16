@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="Gold & Diamond Browser: un navegador de escritorio de AtDev Dev. Descubre sus funciones y descarga las versiones oficiales.">
+  <title>Gold & Diamond Browser — AtDev Dev</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="Gold and Diamond, inicio">
+      <span class="brand-mark">◇</span>
+      <span>GOLD <i>&</i> DIAMOND</span>
+    </a>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav id="main-nav">
+      <a href="#features">Características</a>
+      <a href="#downloads">Descargas</a>
+      <a href="#updates">Novedades</a>
+      <a href="#about">Acerca de</a>
+      <a class="nav-github" href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><span class="status-dot"></span> UN PROYECTO DE ATDEV DEV</div>
+        <h1>Explora más allá<br>de lo <span>convencional.</span></h1>
+        <p class="hero-copy">Una experiencia de navegación de escritorio con una interfaz elegante, herramientas integradas y una filosofía abierta.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#downloads">Descargar navegador <span>↓</span></a>
+          <a class="button button-secondary" href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser" target="_blank" rel="noopener">Explorar código ↗</a>
+        </div>
+        <p class="platform-note">Windows · Linux · macOS <span>•</span> Código abierto</p>
+      </div>
+      <div class="hero-art" aria-label="Emblema geométrico dorado">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="diamond"><div class="diamond-inner">G<span>&</span>D</div></div>
+        <div class="art-caption">GOLD & DIAMOND<br><small>DESKTOP BROWSER</small></div>
+      </div>
+    </section>
+
+    <section class="trust-strip">
+      <div><strong>AtDev Dev</strong><span>Desarrollado por una iniciativa independiente</span></div>
+      <div><strong>Open source</strong><span>El código fuente está disponible</span></div>
+      <div><strong>Multiplataforma</strong><span>Windows, Linux y macOS</span></div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-heading">
+        <p class="eyebrow">DISEÑADO PARA EXPLORAR</p>
+        <h2>Más que una ventana al internet.</h2>
+        <p>Herramientas integradas para hacer más cómoda tu experiencia de navegación.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card"><span class="feature-icon">◈</span><h3>Interfaz elegante</h3><p>Una experiencia visual oscura con detalles dorados y controles organizados.</p></article>
+        <article class="feature-card"><span class="feature-icon">⇩</span><h3>Gestor de descargas</h3><p>Consulta el progreso, pausa, reanuda y administra tus descargas.</p></article>
+        <article class="feature-card"><span class="feature-icon">⟳</span><h3>Actualizaciones</h3><p>Comprueba las nuevas versiones publicadas en GitHub.</p></article>
+        <article class="feature-card"><span class="feature-icon">▣</span><h3>Perfiles</h3><p>Organiza distintas sesiones de navegación mediante perfiles.</p></article>
+        <article class="feature-card"><span class="feature-icon">⚙</span><h3>Personalización</h3><p>Configuraciones y opciones para adaptar el navegador a tu uso.</p></article>
+        <article class="feature-card"><span class="feature-icon">⌘</span><h3>Proyecto abierto</h3><p>Consulta el código, reporta problemas y participa en su desarrollo.</p></article>
+      </div>
+    </section>
+
+    <section class="download-section" id="downloads">
+      <div class="download-panel">
+        <div>
+          <p class="eyebrow">OBTÉN LA VERSIÓN OFICIAL</p>
+          <h2>Tu próxima experiencia<br>comienza aquí.</h2>
+          <p class="muted">Las descargas se obtienen directamente desde GitHub Releases. Elige únicamente archivos publicados por el proyecto.</p>
+          <a class="button button-primary" href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser/releases" target="_blank" rel="noopener">Ver todas las versiones ↗</a>
+        </div>
+        <div class="release-card">
+          <div class="release-top"><span class="release-label">ÚLTIMA VERSIÓN ESTABLE</span><span class="live-dot"></span></div>
+          <h3 id="release-version">Consultando GitHub…</h3>
+          <p id="release-date" class="muted">Buscando la publicación más reciente.</p>
+          <div id="release-assets" class="release-assets"></div>
+          <p id="release-status" class="release-status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section updates-section" id="updates">
+      <div class="section-heading">
+        <p class="eyebrow">SIGUE EL DESARROLLO</p>
+        <h2>Novedades y progreso.</h2>
+        <p>Consulta los cambios y anuncios directamente en el repositorio.</p>
+      </div>
+      <div class="updates-links">
+        <a href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser/releases" target="_blank" rel="noopener"><span>01</span><div><strong>Historial de versiones</strong><small>Notas de cada publicación</small></div><b>↗</b></a>
+        <a href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser/issues" target="_blank" rel="noopener"><span>02</span><div><strong>Problemas y sugerencias</strong><small>Reporta errores o comparte ideas</small></div><b>↗</b></a>
+        <a href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser/commits/main" target="_blank" rel="noopener"><span>03</span><div><strong>Actividad del proyecto</strong><small>Revisa los cambios del código</small></div><b>↗</b></a>
+      </div>
+    </section>
+
+    <section class="about-section" id="about">
+      <p class="eyebrow">UNA CREACIÓN DE ATDEV DEV</p>
+      <h2>Software abierto.<br><span>Experiencias accesibles.</span></h2>
+      <p>Gold & Diamond Browser forma parte de AtDev Dev, una iniciativa enfocada en crear software accesible y abierto.</p>
+      <a href="https://github.com/Reaccionador2Jeje" target="_blank" rel="noopener">Conoce AtDev Dev en GitHub ↗</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand" href="#home"><span class="brand-mark">◇</span><span>GOLD <i>&</i> DIAMOND</span></a>
+    <p>© <span id="year"></span> AtDev Dev. Proyecto de código abierto.</p>
+    <a href="https://github.com/Reaccionador2Jeje/Gold-Diamond-Browser" target="_blank" rel="noopener">Repositorio ↗</a>
+  </footer>
+</body>
+</html>
