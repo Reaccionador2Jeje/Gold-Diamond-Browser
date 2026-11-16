@@ -5,12 +5,18 @@ vibe request = json_parse(env("GDB_REQUEST", "{}"))
 vibe storage_path = "data/workspaces.json"
 vibe workspaces = []
 
+ritual keep_workspace(item) {
+    drop item.name != request.name
+}
+
 when file_exists(storage_path) {
     workspaces = json_parse(read_file(storage_path))
 }
 
 when request.action == "save" {
     when request.name != "" {
+        # Saving an existing name updates it instead of creating duplicates.
+        workspaces = filter(workspaces, keep_workspace)
         push(workspaces, {
             name: request.name,
             tabs: request.tabs,
@@ -18,6 +24,11 @@ when request.action == "save" {
         })
         write_file(storage_path, json_stringify(workspaces))
     }
+}
+
+when request.action == "remove" {
+    workspaces = filter(workspaces, keep_workspace)
+    write_file(storage_path, json_stringify(workspaces))
 }
 
 spill json_stringify({workspaces: workspaces})
