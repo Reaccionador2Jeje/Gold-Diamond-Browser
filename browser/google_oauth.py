@@ -39,9 +39,9 @@ class _CallbackServer(ThreadingHTTPServer):
 class GoogleOAuthDialog(QDialog):
     """Connect a Google account using an installed-app OAuth client and PKCE."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, profile_id: str = "default"):
         super().__init__(parent)
-        self.setWindowTitle("Connect Google account")
+        self.profile_id = profile_id\n        self.setWindowTitle("Connect Google account")
         self.setMinimumWidth(430)
         self._server = None
         self._server_thread = None
@@ -178,7 +178,7 @@ class GoogleOAuthDialog(QDialog):
             if not isinstance(account, str) or not account:
                 raise RuntimeError("Google did not return an account email.")
             keyring.set_password(
-                SERVICE_NAME, account,
+                SERVICE_NAME, f"{self.profile_id}:{account}",
                 json.dumps({
                     "access_token": tokens.get("access_token"),
                     "refresh_token": tokens.get("refresh_token"),
