@@ -146,7 +146,10 @@ class GoogleOAuthDialog(QDialog):
             def log_message(self, *_args):
                 return
 
-        self._result = {}\n        self._error = None\n        try:\n            self._server = _CallbackServer(("127.0.0.1", 0), Handler)
+        self._result = {}
+        self._error = None
+        try:
+            self._server = _CallbackServer(("127.0.0.1", 0), Handler)
             port = self._server.server_address[1]
             self._server_thread = threading.Thread(
                 target=self._server.serve_forever, daemon=True
