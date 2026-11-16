@@ -4,8 +4,8 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtCore import Qt, QUrl, Signal
+from PySide6.QtGui import QAction, QIcon, QKeySequence, QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QInputDialog,
     QMainWindow, QMenu, QMessageBox, QProgressBar, QPushButton, QStatusBar,
@@ -31,6 +31,19 @@ from .memingo_bridge import (
 
 ACCENT_GOLD = "#e5b85c"
 ACCENT_BLUE = "#75d8e8"
+
+
+class GoogleAuthAwarePage(QWebEnginePage):
+    """Open Google account sign-in in the system browser, as required by Google's embedded-browser policy."""
+
+    external_auth_requested = Signal(QUrl)
+
+    def acceptNavigationRequest(self, url: QUrl, navigation_type, is_main_frame: bool) -> bool:
+        host = url.host().lower()
+        if is_main_frame and (host == "accounts.google.com" or host.endswith(".accounts.google.com")):
+            self.external_auth_requested.emit(url)
+            return False
+        return super().acceptNavigationRequest(url, navigation_type, is_main_frame)
 
 
 class GoldDiamondWindow(QMainWindow):
@@ -274,14 +287,15 @@ class GoldDiamondWindow(QMainWindow):
         view.setProperty("internal_home", False)
         if private:
             private_profile = QWebEngineProfile(self)
-            private_page = QWebEnginePage(private_profile, view)
-            view.setPage(private_page)
+            page = GoogleAuthAwarePage(private_profile, view)
             view.setProperty("gdb_profile_id", None)
         else:
             profile_id = profile_id or self.active_profile_id
             self._session_profiles_seen.add(profile_id)
             view.setProperty("gdb_profile_id", profile_id)
-            view.setPage(QWebEnginePage(self._persistent_profile(profile_id), view))
+            page = GoogleAuthAwarePage(self._persistent_profile(profile_id), view)
+        page.external_auth_requested.connect(self._open_google_auth_externally)
+        view.setPage(page)
         index = self.tabs.addTab(view, "New tab")
         self.tabs.setCurrentIndex(index)
         view.urlChanged.connect(lambda qurl, browser=view: self.update_address(qurl, browser))
@@ -301,6 +315,19 @@ class GoldDiamondWindow(QMainWindow):
         else:
             view.setUrl(QUrl(url))
         self.address.setFocus()
+
+    def _open_google_auth_externally(self, url: QUrl):
+        """Continue Google account authentication in the user's default browser."""
+        if QDesktopServices.openUrl(url):
+            self.status.showMessage(
+                "Google sign-in was opened in your default browser. Complete verification there.",
+                8000,
+            )
+        else:
+            self.status.showMessage(
+                "Could not open the default browser for Google sign-in.",
+                8000,
+            )
 
     def _persistent_profile(self, profile_id: str) -> QWebEngineProfile:
         if profile_id in self.browser_profiles:
