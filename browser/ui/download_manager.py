@@ -6,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QProgressBar,
+    QDialog, QHBoxLayout, QLabel, QPushButton, QProgressBar, QHeaderView,
     QTableWidget, QTableWidgetItem, QVBoxLayout,
 )
 
@@ -35,7 +35,7 @@ class DownloadManagerDialog(QDialog):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(0, self.table.horizontalHeader().ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.table, 1)
 
         controls = QHBoxLayout()
@@ -132,8 +132,9 @@ class DownloadManagerDialog(QDialog):
         request = entry["request"]
         state_name = getattr(request.state(), "name", str(request.state()).split(".")[-1])
         finished = bool(request.isFinished())
-        self.pause_button.setEnabled(not finished and "DownloadInProgress" in state_name)
-        self.resume_button.setEnabled(not finished and "DownloadInterrupted" in state_name)
+        paused = bool(request.isPaused()) if hasattr(request, "isPaused") else False
+        self.pause_button.setEnabled(not finished and not paused and "DownloadInProgress" in state_name)
+        self.resume_button.setEnabled(not finished and paused)
         self.cancel_button.setEnabled(not finished)
         exists = entry["path"].is_file()
         self.open_button.setEnabled(exists)
