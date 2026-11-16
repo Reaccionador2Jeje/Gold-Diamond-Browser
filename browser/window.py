@@ -216,7 +216,8 @@ class GoldDiamondWindow(QMainWindow):
         ):
             self._menu_action(themes_menu, label, lambda selected=theme_name: self.change_theme(selected))
 
-        help_menu = bar.addMenu("Help")\n        self._menu_action(help_menu, "Check for updates…", self.show_updates)
+        help_menu = bar.addMenu("Help")
+        self._menu_action(help_menu, "Check for updates…", self.show_updates)
         self._menu_action(help_menu, "About Gold & Diamond", self.show_about)
         self._menu_action(help_menu, "Credits & licenses", self.show_credits)
 
